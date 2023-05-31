@@ -1,7 +1,7 @@
 <div align="center">
     <img src="./app/src/main/ic_launcher-playstore.png" width="128" height="128" style="display: block; margin: 0 auto"/>
-    <h1>ViMusic</h1>
-    <p>An Android application for streaming music from YouTube Music</p>
+    <h1>Muza</h1>
+    <p>Стриминговый музыкальный плеер на Android</p>
 </div>
 
 ---
@@ -16,44 +16,40 @@
   <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpg" width="30%" />
 </p>
 
-## Features
-- Play (almost) any song or video from YouTube Music
-- Background playback
-- Cache audio chunks for offline playback
-- Search for songs, albums, artists videos and playlists
-- Bookmark artists and albums
-- Import playlists
-- Fetch, display and edit songs lyrics or synchronized lyrics
-- Local playlist management
-- Reorder songs in playlist or queue
-- Light/Dark/Dynamic theme
-- Skip silence
-- Sleep timer
-- Audio normalization
-- Android Auto
-- Persistent queue
-- Open YouTube/YouTube Music links (`watch`, `playlist`, `channel`)
+## Функции
+- Воспроизведение (почти) любой песни или видео с YouTube Music
+- Фоновое воспроизведение
+- Кэшируйте аудиофрагменты для автономного воспроизведения
+- Поиск песен, альбомов, видео исполнителей и списков воспроизведения
+- Добавляйте в закладки исполнителей и альбомы
+- Импорт плейлистов
+- Извлекайте, отображайте и редактируйте тексты песен или синхронизированные тексты.
+- Управление локальным плейлистом
+- Изменить порядок песен в плейлисте или очереди
+- Светлая/темная/динамическая тема
+- Пропуск тишины
+- Таймер сна
+- Нормализация звука
+- Поддержка Андроид Авто
+- Постоянная очередь
+- Открывать ссылки на YouTube/YouTube Music (`смотреть`, `плейлист`, `канал`)
 - ...
 
-## Installation
+## Скачать
 
 [<img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png"
-    alt="Get it on GitHub"
-    height="80">](https://github.com/vfsfitvnm/ViMusic/releases/latest)
-[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
-     alt="Get it on IzzyOnDroid"
-     height="80">](https://apt.izzysoft.de/fdroid/index/apk/it.vfsfitvnm.vimusic)
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-     alt="Get it on F-Droid"
-     height="80">](https://f-droid.org/packages/it.vfsfitvnm.vimusic/)
+    alt="Скачать из Гитхаба"
+    height="80">](https://github.com/hammsterr/muza/releases/latest)
 
-## Acknowledgments
-- [**YouTube-Internal-Clients**](https://github.com/zerodytrash/YouTube-Internal-Clients): A python script that discovers hidden YouTube API clients. Just a research project.
-- [**ionicons**](https://github.com/ionic-team/ionicons): Premium hand-crafted icons built by Ionic, for Ionic apps and web apps everywhere.
 
-<a href="https://www.flaticon.com/authors/ilham-fitrotul-hayat" title="music icons">App icon based on icon created by Ilham Fitrotul Hayat - Flaticon</a>
+## Благодарности
+- [**vfsfitvnm**](https://github.com/vfsfitvnm): Создатель оригинального приложения.
+- [**ViMusic**](https://github.com/vfsfitvnm/ViMusic): Оригинальный репозиторий.
+- [**YouTube-Internal-Clients**](https://github.com/zerodytrash/YouTube-Internal-Clients): Python скрипт для использования скытого API Youtube.
+- [**ionicons**](https://github.com/ionic-team/ionicons): Иконки ручной работы премиум-класса, созданные Ionic, для приложений Ionic и веб-приложений по всему миру.
 
-## Disclaimer
-This project and its contents are not affiliated with, funded, authorized, endorsed by, or in any way associated with YouTube, Google LLC or any of its affiliates and subsidiaries.
 
-Any trademark, service mark, trade name, or other intellectual property rights used in this project are owned by the respective owners.
+## Дисклеймер
+Этот проект и его содержимое не связаны, не финансируются, не санкционированы, не одобрены и каким-либо образом не связаны с YouTube, Google LLC или какими-либо ее аффилированными и дочерними компаниями.
+
+Любая торговая марка, знак обслуживания, торговое наименование или другие права на интеллектуальную собственность, используемые в этом проекте, принадлежат соответствующим владельцам.
