@@ -12,7 +12,7 @@ android {
         minSdk = 21
         targetSdk = 33
         versionCode = 20
-        versionName = "0.5.4"
+        versionName = "0.5.4ru"
     }
 
     splits {
@@ -33,7 +33,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            manifestPlaceholders["appName"] = "ViMusic"
+            manifestPlaceholders["appName"] = "Muza"
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
