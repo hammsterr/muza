@@ -2,7 +2,7 @@
     <img src="./app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp" width="128" height="128" style="display: block; margin: 0 auto"/>
     <h1>Muza</h1>
     <p>Стриминговый музыкальный плеер на Android</p>
-     <img src="https://img.shields.io/github/downloads-pre/hammsterr/muza/release/total?style=plastic&logo=github&logoColor=rgb&label=%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C&labelColor=rgb&color=rgb&link=https%3A%2F%2Fgithub.com%2Fhammster%2Fmuza%2Freleases" style="display: block; margin: 0 auto"/>
+     <img src="https://img.shields.io/github/downloads-pre/hammsterr/muza/release/total?style=plastic&logo=github&logoColor=rgb&label=%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C&labelColor=rgb&color=rgb" style="display: block; margin: 0 auto"/>
 </div>
 
 ---
