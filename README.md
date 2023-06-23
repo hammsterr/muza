@@ -1,19 +1,21 @@
 <div align="center">
-    <img src="./app/src/main/ic_launcher-playstore.png" width="128" height="128" style="display: block; margin: 0 auto"/>
+    <img src="./app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp" width="128" height="128" style="display: block; margin: 0 auto"/>
     <h1>Muza</h1>
     <p>Стриминговый музыкальный плеер на Android</p>
+     <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/hammsterr/muza/total?style=plastic&logo=github&logoColor=rgb&label=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BE%D0%BA&labelColor=rgb&color=rgb">
+
 </div>
 
 ---
 
 <p align="center">
-  <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" width="30%" />
-  <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" width="30%" />
-  <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" width="30%" />
-
-  <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" width="30%" />
-  <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" width="30%" />
-  <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpg" width="30%" />
+  <img src="./ScreenShots/01.jpg" width="30%" />
+  <img src="./ScreenShots/1.jpg" width="30%" />
+  <img src="./ScreenShots/2.jpg" width="30%" />
+    
+  <img src="./ScreenShots/3.jpg" width="30%" />
+  <img src="./ScreenShots/4.jpg" width="30%" />
+  <img src="./ScreenShots/5.jpg" width="30%" />
 </p>
 
 ## Функции
