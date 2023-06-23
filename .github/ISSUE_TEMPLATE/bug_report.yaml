@@ -59,7 +59,7 @@ body:
         If your bug includes a crash, please use `adb logcat` or other ways to provide logs.
   
   - type: input
-    id: vimusic-version
+    id: muza-version
     attributes:
       label: ViMusic version
       placeholder: |

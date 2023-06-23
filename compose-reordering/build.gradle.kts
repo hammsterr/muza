@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "it.vfsfitvnm.compose.reordering"
+    namespace = "it.hamy.compose.reordering"
     compileSdk = 33
 
     defaultConfig {

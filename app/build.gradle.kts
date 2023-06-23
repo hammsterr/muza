@@ -8,7 +8,7 @@ android {
     compileSdk = 33
 
     defaultConfig {
-        applicationId = "it.vfsfitvnm.vimusic"
+        applicationId = "it.hamy.muza"
         minSdk = 21
         targetSdk = 33
         versionCode = 20
@@ -22,7 +22,7 @@ android {
         }
     }
 
-    namespace = "it.vfsfitvnm.vimusic"
+    namespace = "it.hamy.muza"
 
     buildTypes {
         debug {
