@@ -12,7 +12,7 @@ android {
         minSdk = 21
         targetSdk = 33
         versionCode = 20
-        versionName = "0.5.4ru"
+        versionName = "0.5.4.1rus"
     }
 
     splits {
@@ -74,6 +74,7 @@ dependencies {
     implementation(projects.composeRouting)
     implementation(projects.composeReordering)
 
+
     implementation(libs.compose.activity)
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui)
@@ -85,8 +86,10 @@ dependencies {
     implementation(libs.palette)
 
     implementation(libs.exoplayer)
+    implementation(libs.exoplayer.okhttp)
 
     implementation(libs.room)
+    implementation("androidx.media3:media3-datasource-okhttp:1.0.0-alpha03")
     kapt(libs.room.compiler)
 
     implementation(projects.innertube)

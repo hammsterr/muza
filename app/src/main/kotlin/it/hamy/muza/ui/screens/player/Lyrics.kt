@@ -235,7 +235,7 @@ fun Lyrics(
                     .align(Alignment.TopCenter)
             ) {
                 BasicText(
-                    text = "${if (isShowingSynchronizedLyrics) "Синхронизирован текст" else "Т"}екст песни не доступен",
+                    text = "${if (isShowingSynchronizedLyrics) "Синхронизированный т" else "Т"}екст не доступен",
                     style = typography.xs.center.medium.color(PureBlackColorPalette.text),
                     modifier = Modifier
                         .background(Color.Black.copy(0.4f))

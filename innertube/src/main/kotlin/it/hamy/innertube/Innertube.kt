@@ -15,8 +15,12 @@ import io.ktor.serialization.kotlinx.json.json
 import it.hamy.innertube.models.NavigationEndpoint
 import it.hamy.innertube.models.Runs
 import it.hamy.innertube.models.Thumbnail
+import it.hamy.innertube.utils.ProxyPreferences
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import java.net.InetSocketAddress
+import java.net.Proxy
+
 
 object Innertube {
     val client = HttpClient(OkHttp) {
@@ -44,6 +48,19 @@ object Innertube {
                 parameters.append("prettyPrint", "false")
             }
         }
+
+        ProxyPreferences.preference?.let {
+            engine {
+                proxy = Proxy(
+                    it.proxyMode,
+                    InetSocketAddress(
+                        it.proxyHost,
+                        it.proxyPort
+                    )
+                )
+            }
+        }
+
     }
 
     internal const val browse = "/youtubei/v1/browse"

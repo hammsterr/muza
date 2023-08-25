@@ -60,6 +60,16 @@ import com.valentinilk.shimmer.LocalShimmerTheme
 import com.valentinilk.shimmer.defaultShimmerTheme
 import it.hamy.compose.persist.PersistMap
 import it.hamy.compose.persist.PersistMapOwner
+
+import it.hamy.innertube.utils.ProxyPreferenceItem
+import it.hamy.innertube.utils.ProxyPreferences
+import it.hamy.muza.utils.isProxyEnabledKey
+import it.hamy.muza.utils.proxyHostNameKey
+import it.hamy.muza.utils.proxyModeKey
+import it.hamy.muza.utils.proxyPortKey
+import java.net.Proxy
+
+
 import it.hamy.innertube.Innertube
 import it.hamy.innertube.models.bodies.BrowseBody
 import it.hamy.innertube.requests.playlistPage
@@ -127,12 +137,24 @@ class MainActivity : ComponentActivity(), PersistMapOwner {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
         @Suppress("DEPRECATION", "UNCHECKED_CAST")
         persistMap = lastCustomNonConfigurationInstance as? PersistMap ?: PersistMap()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val launchedFromNotification = intent?.extras?.getBoolean("expandPlayerBottomSheet") == true
+
+        with(preferences){
+            if(getBoolean(isProxyEnabledKey,false)) {
+                val hostName = getString(proxyHostNameKey,null)
+                val proxyPort = getInt(proxyPortKey, 8080)
+                val proxyMode = getEnum(proxyModeKey, Proxy.Type.HTTP)
+                hostName?.let { hName->
+                    ProxyPreferences.preference = ProxyPreferenceItem(hName,proxyPort,proxyMode)
+                }
+            }
+        }
 
         setContent {
             val coroutineScope = rememberCoroutineScope()

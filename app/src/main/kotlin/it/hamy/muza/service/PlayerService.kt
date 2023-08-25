@@ -43,7 +43,14 @@ import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DataSource
-import androidx.media3.datasource.DefaultHttpDataSource
+
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import it.hamy.innertube.utils.ProxyPreferences
+import okhttp3.OkHttpClient
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.time.Duration
+
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.CacheDataSource
@@ -737,12 +744,24 @@ class PlayerService : InvincibleService(), Player.Listener, PlaybackStatsListene
         }
     }
 
+    private fun okHttpClient() : OkHttpClient{
+        ProxyPreferences.preference?.let{
+            return OkHttpClient.Builder()
+                .proxy(Proxy(it.proxyMode,InetSocketAddress(it.proxyHost,it.proxyPort)))
+                .connectTimeout(Duration.ofSeconds(16))
+                .readTimeout(Duration.ofSeconds(8))
+                .build()
+        }
+        return OkHttpClient.Builder()
+            .connectTimeout(Duration.ofSeconds(16))
+            .readTimeout(Duration.ofSeconds(8))
+            .build()
+    }
+
     private fun createCacheDataSource(): DataSource.Factory {
         return CacheDataSource.Factory().setCache(cache).apply {
             setUpstreamDataSourceFactory(
-                DefaultHttpDataSource.Factory()
-                    .setConnectTimeoutMs(16000)
-                    .setReadTimeoutMs(8000)
+                OkHttpDataSource.Factory(okHttpClient())
                     .setUserAgent("Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0")
             )
         }

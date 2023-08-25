@@ -21,17 +21,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import it.hamy.compose.routing.RouteHandler
 import it.hamy.muza.R
 import it.hamy.muza.ui.components.themed.Scaffold
 import it.hamy.muza.ui.components.themed.Switch
+import it.hamy.muza.ui.components.themed.TextFieldDialog
 import it.hamy.muza.ui.components.themed.ValueSelectorDialog
 import it.hamy.muza.ui.screens.globalRoutes
 import it.hamy.muza.ui.styling.LocalAppearance
 import it.hamy.muza.utils.color
 import it.hamy.muza.utils.secondary
 import it.hamy.muza.utils.semiBold
+import it.hamy.muza.utils.toast
 
 @ExperimentalFoundationApi
 @ExperimentalAnimationApi
@@ -192,6 +195,37 @@ fun SettingsEntry(
         trailingContent?.invoke()
     }
 }
+
+@Composable
+fun TextDialogSettingEntry(
+    title: String,
+    text: String,
+    currentText: String,
+    onTextSave: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    isEnabled: Boolean = true
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    if (showDialog) {
+        TextFieldDialog(hintText =title ,
+            onDismiss = { showDialog = false },
+            onDone ={value->
+                onTextSave(value)
+                context.toast("Сохранено!")
+            } , doneText = "Save", initialTextInput = currentText)
+    }
+    SettingsEntry(
+        title = title,
+        text = text,
+        isEnabled = isEnabled,
+        onClick = { showDialog = true },
+        trailingContent = { },
+        modifier = modifier
+    )
+}
+
 
 @Composable
 fun SettingsDescription(

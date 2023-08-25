@@ -89,7 +89,7 @@ fun InHistoryMediaItemMenu(
 
     if (isHiding) {
         ConfirmationDialog(
-            text = "Do you really want to hide this song? Its playback time and cache will be wiped.\nThis action is irreversible.",
+            text = "Вы действительно хотите скрыть эту песню? Время воспроизведения и кэш будут удалены.\n" + "Это действие необратимо",
             onDismiss = { isHiding = false },
             onConfirm = {
                 onDismiss()
@@ -330,7 +330,7 @@ fun MediaItemMenu(
 
             if (isCreatingNewPlaylist && onAddToPlaylist != null) {
                 TextFieldDialog(
-                    hintText = "Enter the playlist name",
+                    hintText = "Введите название плейлиста",
                     onDismiss = { isCreatingNewPlaylist = false },
                     onDone = { text ->
                         onDismiss()
@@ -365,7 +365,7 @@ fun MediaItemMenu(
 
                     if (onAddToPlaylist != null) {
                         SecondaryTextButton(
-                            text = "New playlist",
+                            text = "Новый плейлист",
                             onClick = { isCreatingNewPlaylist = true },
                             alternative = true
                         )
@@ -377,7 +377,7 @@ fun MediaItemMenu(
                         MenuEntry(
                             icon = R.drawable.playlist,
                             text = playlistPreview.playlist.name,
-                            secondaryText = "${playlistPreview.songCount} songs",
+                            secondaryText = "${playlistPreview.songCount} песен",
                             onClick = {
                                 onDismiss()
                                 onAddToPlaylist(playlistPreview.playlist, playlistPreview.songCount)
@@ -463,7 +463,7 @@ fun MediaItemMenu(
                 onStartRadio?.let { onStartRadio ->
                     MenuEntry(
                         icon = R.drawable.radio,
-                        text = "Start radio",
+                        text = "Включить радио",
                         onClick = {
                             onDismiss()
                             onStartRadio()
@@ -474,7 +474,7 @@ fun MediaItemMenu(
                 onPlayNext?.let { onPlayNext ->
                     MenuEntry(
                         icon = R.drawable.play_skip_forward,
-                        text = "Play next",
+                        text = "Следующая",
                         onClick = {
                             onDismiss()
                             onPlayNext()
@@ -485,7 +485,7 @@ fun MediaItemMenu(
                 onEnqueue?.let { onEnqueue ->
                     MenuEntry(
                         icon = R.drawable.enqueue,
-                        text = "Enqueue",
+                        text = "В очередь",
                         onClick = {
                             onDismiss()
                             onEnqueue()
@@ -496,7 +496,7 @@ fun MediaItemMenu(
                 onGoToEqualizer?.let { onGoToEqualizer ->
                     MenuEntry(
                         icon = R.drawable.equalizer,
-                        text = "Equalizer",
+                        text = "Эквалайзер",
                         onClick = {
                             onDismiss()
                             onGoToEqualizer()
@@ -520,9 +520,9 @@ fun MediaItemMenu(
                     if (isShowingSleepTimerDialog) {
                         if (sleepTimerMillisLeft != null) {
                             ConfirmationDialog(
-                                text = "Do you want to stop the sleep timer?",
-                                cancelText = "No",
-                                confirmText = "Stop",
+                                text = "Вы хотите отключить таймер сна?",
+                                cancelText = "нет",
+                                confirmText = "отключить",
                                 onDismiss = { isShowingSleepTimerDialog = false },
                                 onConfirm = {
                                     binder?.cancelSleepTimer()
@@ -538,7 +538,7 @@ fun MediaItemMenu(
                                 }
 
                                 BasicText(
-                                    text = "Set sleep timer",
+                                    text = "Установить таймер сна",
                                     style = typography.s.semiBold,
                                     modifier = Modifier
                                         .padding(vertical = 8.dp, horizontal = 24.dp)
@@ -570,13 +570,13 @@ fun MediaItemMenu(
 
                                     Box(contentAlignment = Alignment.Center) {
                                         BasicText(
-                                            text = "88h 88m",
+                                            text = "88ч 88м",
                                             style = typography.s.semiBold,
                                             modifier = Modifier
                                                 .alpha(0f)
                                         )
                                         BasicText(
-                                            text = "${amount / 6}h ${(amount % 6) * 10}m",
+                                            text = "${amount / 6}ч ${(amount % 6) * 10}м",
                                             style = typography.s.semiBold
                                         )
                                     }
@@ -603,12 +603,12 @@ fun MediaItemMenu(
                                         .fillMaxWidth()
                                 ) {
                                     DialogTextButton(
-                                        text = "Cancel",
+                                        text = "Отмена",
                                         onClick = { isShowingSleepTimerDialog = false }
                                     )
 
                                     DialogTextButton(
-                                        text = "Set",
+                                        text = "Установить",
                                         enabled = amount > 0,
                                         primary = true,
                                         onClick = {
@@ -623,12 +623,12 @@ fun MediaItemMenu(
 
                     MenuEntry(
                         icon = R.drawable.alarm,
-                        text = "Sleep timer",
+                        text = "Таймер сна",
                         onClick = { isShowingSleepTimerDialog = true },
                         trailingContent = sleepTimerMillisLeft?.let {
                             {
                                 BasicText(
-                                    text = "${formatAsDuration(it)} left",
+                                    text = "Осталось ${formatAsDuration(it)}",
                                     style = typography.xxs.medium,
                                     modifier = modifier
                                         .background(
@@ -646,7 +646,7 @@ fun MediaItemMenu(
                 if (onAddToPlaylist != null) {
                     MenuEntry(
                         icon = R.drawable.playlist,
-                        text = "Add to playlist",
+                        text = "Добавить в плейлист",
                         onClick = { isViewingPlaylists = true },
                         trailingContent = {
                             Image(
@@ -666,7 +666,7 @@ fun MediaItemMenu(
                     albumInfo?.let { (albumId) ->
                         MenuEntry(
                             icon = R.drawable.disc,
-                            text = "Go to album",
+                            text = "Перейти в альбом",
                             onClick = {
                                 onDismiss()
                                 onGoToAlbum(albumId)
@@ -679,7 +679,7 @@ fun MediaItemMenu(
                     artistsInfo?.forEach { (authorId, authorName) ->
                         MenuEntry(
                             icon = R.drawable.person,
-                            text = "More of $authorName",
+                            text = "Больше от $authorName",
                             onClick = {
                                 onDismiss()
                                 onGoToArtist(authorId)
@@ -691,7 +691,7 @@ fun MediaItemMenu(
                 onRemoveFromQueue?.let { onRemoveFromQueue ->
                     MenuEntry(
                         icon = R.drawable.trash,
-                        text = "Remove from queue",
+                        text = "Убрать из очереди",
                         onClick = {
                             onDismiss()
                             onRemoveFromQueue()
@@ -702,7 +702,7 @@ fun MediaItemMenu(
                 onRemoveFromPlaylist?.let { onRemoveFromPlaylist ->
                     MenuEntry(
                         icon = R.drawable.trash,
-                        text = "Remove from playlist",
+                        text = "Удалить из плейлиста",
                         onClick = {
                             onDismiss()
                             onRemoveFromPlaylist()
@@ -713,7 +713,7 @@ fun MediaItemMenu(
                 onHideFromDatabase?.let { onHideFromDatabase ->
                     MenuEntry(
                         icon = R.drawable.trash,
-                        text = "Hide",
+                        text = "Скрыть",
                         onClick = onHideFromDatabase
                     )
                 }
@@ -721,7 +721,7 @@ fun MediaItemMenu(
                 onRemoveFromQuickPicks?.let {
                     MenuEntry(
                         icon = R.drawable.trash,
-                        text = "Hide from \"Quick picks\"",
+                        text = "Скрыть из \"Обзора\"",
                         onClick = {
                             onDismiss()
                             onRemoveFromQuickPicks()

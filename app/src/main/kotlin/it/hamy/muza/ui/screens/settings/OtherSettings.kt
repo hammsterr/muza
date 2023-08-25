@@ -10,6 +10,7 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -38,10 +39,17 @@ import it.hamy.muza.utils.isAtLeastAndroid12
 import it.hamy.muza.utils.isAtLeastAndroid6
 import it.hamy.muza.utils.isIgnoringBatteryOptimizations
 import it.hamy.muza.utils.isInvincibilityEnabledKey
+import it.hamy.muza.utils.isProxyEnabledKey
 import it.hamy.muza.utils.pauseSearchHistoryKey
+import it.hamy.muza.utils.proxyHostNameKey
+import it.hamy.muza.utils.proxyModeKey
+import it.hamy.muza.utils.proxyPortKey
 import it.hamy.muza.utils.rememberPreference
 import it.hamy.muza.utils.toast
 import kotlinx.coroutines.flow.distinctUntilChanged
+import java.net.Proxy
+
+
 
 @SuppressLint("BatteryLife")
 @ExperimentalAnimationApi
@@ -71,6 +79,14 @@ fun OtherSettings() {
     }
 
     var isInvincibilityEnabled by rememberPreference(isInvincibilityEnabledKey, false)
+
+    var isProxyEnabled by rememberPreference(isProxyEnabledKey, false)
+
+    var proxyHost by rememberPreference(proxyHostNameKey, defaultValue = "")
+
+    var proxyPort by rememberPreference(proxyPortKey, defaultValue = 1080)
+
+    var proxyMode by rememberPreference(proxyModeKey, defaultValue = Proxy.Type.HTTP)
 
     var isIgnoringBatteryOptimizations by remember {
         mutableStateOf(context.isIgnoringBatteryOptimizations)
@@ -178,5 +194,33 @@ fun OtherSettings() {
             isChecked = isInvincibilityEnabled,
             onCheckedChange = { isInvincibilityEnabled = it }
         )
+
+
+        SettingsEntryGroupText(title = "PROXY")
+
+        SwitchSettingEntry(
+            title = "HTTP Proxy",
+            text = "Enable HTTP Proxy",
+            isChecked = isProxyEnabled,
+            onCheckedChange = { isProxyEnabled = it }
+        )
+
+        AnimatedVisibility(visible = isProxyEnabled) {
+            Column {
+                EnumValueSelectorSettingsEntry(title = "Proxy",
+                    selectedValue = proxyMode, onValueSelected = {proxyMode = it})
+                TextDialogSettingEntry(
+                    title = "Хост",
+                    text = "Введите http хост",
+                    currentText = proxyHost,
+                    onTextSave = { proxyHost = it })
+                TextDialogSettingEntry(
+                    title = "Порт",
+                    text = "Введите порт",
+                    currentText = proxyPort.toString(),
+                    onTextSave = { proxyPort = it.toIntOrNull() ?: 1080 })
+            }
+        }
+
     }
 }

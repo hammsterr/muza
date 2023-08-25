@@ -83,6 +83,13 @@ import it.hamy.muza.utils.smoothScrollToTop
 import it.hamy.muza.utils.windows
 import kotlinx.coroutines.launch
 
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
+
 @ExperimentalFoundationApi
 @ExperimentalAnimationApi
 @Composable
@@ -202,6 +209,7 @@ fun Queue(
                         key = { it.uid.hashCode() }
                     ) { window ->
                         val isPlayingThisMediaItem = mediaItemIndex == window.firstPeriodIndex
+                        var offsetX by remember { mutableStateOf(0f) }
 
                         SongItem(
                             song = window.mediaItem,
@@ -283,6 +291,23 @@ fun Queue(
                                     reorderingState = reorderingState,
                                     index = window.firstPeriodIndex
                                 )
+
+                                .draggable(
+                                    orientation = Orientation.Horizontal,
+                                    state = rememberDraggableState(onDelta = { delta ->
+                                        if (isPlayingThisMediaItem) return@rememberDraggableState
+                                        offsetX += delta
+                                    }),
+                                    onDragStopped = { velocity ->
+                                        if ((offsetX <= -300.0f && velocity <= -3000.0f) || (offsetX >= 300.0f && velocity >= 3000.0f)) {
+                                            binder.player.removeMediaItem(window.firstPeriodIndex)
+                                        } else {
+                                            offsetX = 0f
+                                        }
+                                    }
+                                )
+                                .offset{ IntOffset(offsetX.roundToInt(), 0) }
+
                         )
                     }
 
