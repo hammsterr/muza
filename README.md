@@ -53,7 +53,7 @@ Muza - это удобное и простое в использовании м�
 
 ## Скачать
 
-[<img src="https://help.rustore.ru/pic/e/d/edc2a045e17e4971c7cca77c7fde4b66.png" alt="Скачать из RuStore">alt="Скачать из RuStore"
+[<img src="https://i.ibb.co/jMwfXFd/rustore-light.png" alt="Скачать из RuStore">alt="Скачать из RuStore"
 height="80">](https://apps.rustore.ru/app/it.hamy.muza)
 
 [<img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png"
