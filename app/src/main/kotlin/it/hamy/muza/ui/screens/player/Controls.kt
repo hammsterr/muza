@@ -53,6 +53,10 @@ import it.hamy.muza.utils.secondary
 import it.hamy.muza.utils.semiBold
 import it.hamy.muza.utils.trackLoopEnabledKey
 import kotlinx.coroutines.flow.distinctUntilChanged
+import it.hamy.muza.models.Info
+import it.hamy.muza.ui.screens.artistRoute
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun Controls(
@@ -79,8 +83,14 @@ fun Controls(
         mutableStateOf<Long?>(null)
     }
 
-    LaunchedEffect(mediaId) {
-        Database.likedAt(mediaId).distinctUntilChanged().collect { likedAt = it }
+    var artistsInfo: List<Info>? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            if (artistsInfo == null) artistsInfo = Database.songArtistInfo(mediaId)
+
+            Database.likedAt(mediaId).distinctUntilChanged().collect { likedAt = it }
+        }
     }
 
     val shouldBePlayingTransition = updateTransition(shouldBePlaying, label = "shouldBePlaying")
@@ -113,7 +123,11 @@ fun Controls(
             text = artist ?: "",
             style = typography.s.semiBold.secondary,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.clickable {
+                val goTo = artistRoute::global
+                goTo(artistsInfo?.get(0)?.id)
+            }
         )
 
         Spacer(

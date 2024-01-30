@@ -53,9 +53,11 @@ import it.hamy.muza.utils.playlistSortByKey
 import it.hamy.muza.utils.playlistSortOrderKey
 import it.hamy.muza.utils.rememberPreference
 
+
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @Composable
+
 fun HomePlaylists(
     onBuiltInPlaylist: (BuiltInPlaylist) -> Unit,
     onPlaylistClick: (Playlist) -> Unit,
@@ -66,6 +68,8 @@ fun HomePlaylists(
     var isCreatingANewPlaylist by rememberSaveable {
         mutableStateOf(false)
     }
+
+
 
     if (isCreatingANewPlaylist) {
         TextFieldDialog(

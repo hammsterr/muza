@@ -176,11 +176,11 @@ fun ArtistScreen(browseId: String) {
                 tabIndex = tabIndex,
                 onTabChanged = { tabIndex = it },
                 tabColumnContent = { Item ->
-                    Item(0, "Overview", R.drawable.sparkles)
-                    Item(1, "Songs", R.drawable.musical_notes)
-                    Item(2, "Albums", R.drawable.disc)
-                    Item(3, "Singles", R.drawable.disc)
-                    Item(4, "Library", R.drawable.library)
+                    Item(0, "Обзор", R.drawable.sparkles)
+                    Item(1, "Песни", R.drawable.musical_notes)
+                    Item(2, "Альбомы", R.drawable.disc)
+                    Item(3, "Синглы", R.drawable.disc)
+                    Item(4, "Библиотека", R.drawable.library)
                 },
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
@@ -267,7 +267,7 @@ fun ArtistScreen(browseId: String) {
                             ItemsPage(
                                 tag = "artist/$browseId/albums",
                                 headerContent = headerContent,
-                                emptyItemsText = "This artist didn't release any album",
+                                emptyItemsText = "Исполнитель не выпустил ни одного альбома",
                                 itemsPageProvider = artistPage?.let {
                                     ({ continuation ->
                                         continuation?.let {
@@ -317,7 +317,7 @@ fun ArtistScreen(browseId: String) {
                             ItemsPage(
                                 tag = "artist/$browseId/singles",
                                 headerContent = headerContent,
-                                emptyItemsText = "This artist didn't release any single",
+                                emptyItemsText = "Исполнитель не выпустил ни одного сингла",
                                 itemsPageProvider = artistPage?.let {
                                     ({ continuation ->
                                         continuation?.let {

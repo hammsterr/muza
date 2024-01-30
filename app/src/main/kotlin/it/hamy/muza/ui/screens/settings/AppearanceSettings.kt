@@ -48,7 +48,7 @@ fun AppearanceSettings() {
     var colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.System)
     var thumbnailRoundness by rememberPreference(
         thumbnailRoundnessKey,
-        ThumbnailRoundness.Light
+        ThumbnailRoundness.Слабое
     )
     var useSystemFont by rememberPreference(useSystemFontKey, false)
     var applyFontPadding by rememberPreference(applyFontPaddingKey, false)

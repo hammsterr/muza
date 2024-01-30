@@ -128,6 +128,7 @@ class MainActivity : ComponentActivity(), PersistMapOwner {
 
     override lateinit var persistMap: PersistMap
 
+
     override fun onStart() {
         super.onStart()
         bindService(intent<PlayerService>(), serviceConnection, Context.BIND_AUTO_CREATE)
@@ -168,7 +169,7 @@ class MainActivity : ComponentActivity(), PersistMapOwner {
                     val colorPaletteName = getEnum(colorPaletteNameKey, ColorPaletteName.Dynamic)
                     val colorPaletteMode = getEnum(colorPaletteModeKey, ColorPaletteMode.System)
                     val thumbnailRoundness =
-                        getEnum(thumbnailRoundnessKey, ThumbnailRoundness.Light)
+                        getEnum(thumbnailRoundnessKey, ThumbnailRoundness.Слабое)
 
                     val useSystemFont = getBoolean(useSystemFontKey, false)
                     val applyFontPadding = getBoolean(applyFontPaddingKey, false)
@@ -267,7 +268,7 @@ class MainActivity : ComponentActivity(), PersistMapOwner {
 
                             thumbnailRoundnessKey -> {
                                 val thumbnailRoundness =
-                                    sharedPreferences.getEnum(key, ThumbnailRoundness.Light)
+                                    sharedPreferences.getEnum(key, ThumbnailRoundness.Слабое)
 
                                 appearance = appearance.copy(
                                     thumbnailShape = thumbnailRoundness.shape()

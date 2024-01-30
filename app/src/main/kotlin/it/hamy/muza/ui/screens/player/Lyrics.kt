@@ -79,6 +79,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 
 @Composable
 fun Lyrics(
@@ -91,6 +96,10 @@ fun Lyrics(
     ensureSongInserted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+
+
+
     AnimatedVisibility(
         visible = isDisplayed,
         enter = fadeIn(),
@@ -117,11 +126,15 @@ fun Lyrics(
             mutableStateOf(false)
         }
 
+
+        val clipboardManager = ContextCompat.getSystemService(context, ClipboardManager::class.java)
+
         LaunchedEffect(mediaId, isShowingSynchronizedLyrics) {
             withContext(Dispatchers.IO) {
                 Database.lyrics(mediaId).collect {
                     if (isShowingSynchronizedLyrics && it?.synced == null) {
                         val mediaMetadata = mediaMetadataProvider()
+
                         var duration = withContext(Dispatchers.Main) {
                             durationProvider()
                         }
@@ -349,6 +362,15 @@ fun Lyrics(
                                         onClick = {
                                             menuState.hide()
                                             isEditing = true
+                                        }
+                                    )
+
+                                    MenuEntry(
+                                        icon = R.drawable.text,
+                                        text = "Скопировать текст",
+                                        onClick = {
+                                            menuState.hide()
+                                            clipboardManager?.setPrimaryClip(ClipData.newPlainText("Lyrics", lyrics?.fixed))
                                         }
                                     )
 

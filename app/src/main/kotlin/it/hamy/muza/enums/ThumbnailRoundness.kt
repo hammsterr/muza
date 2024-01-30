@@ -6,17 +6,19 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
 enum class ThumbnailRoundness {
-    None,
-    Light,
-    Medium,
-    Heavy;
+    Отключено,
+    Слабое,
+    Среднее,
+    Сильное,
+    Максимальное;
 
     fun shape(): Shape {
         return when (this) {
-            None -> RectangleShape
-            Light -> RoundedCornerShape(2.dp)
-            Medium -> RoundedCornerShape(4.dp)
-            Heavy -> RoundedCornerShape(8.dp)
+            Отключено -> RectangleShape
+            Слабое -> RoundedCornerShape(2.dp)
+            Среднее -> RoundedCornerShape(4.dp)
+            Сильное -> RoundedCornerShape(8.dp)
+            Максимальное -> RoundedCornerShape(14.dp)
         }
     }
 }

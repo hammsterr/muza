@@ -190,7 +190,7 @@ fun OtherSettings() {
 
         SwitchSettingEntry(
             title = "Invincible service",
-            text = "When turning off battery optimizations is not enough",
+            text = "Обход экономии батареи",
             isChecked = isInvincibilityEnabled,
             onCheckedChange = { isInvincibilityEnabled = it }
         )
@@ -199,8 +199,8 @@ fun OtherSettings() {
         SettingsEntryGroupText(title = "PROXY")
 
         SwitchSettingEntry(
-            title = "HTTP Proxy",
-            text = "Enable HTTP Proxy",
+            title = "Proxy",
+            text = "Включить proxy",
             isChecked = isProxyEnabled,
             onCheckedChange = { isProxyEnabled = it }
         )
@@ -211,7 +211,7 @@ fun OtherSettings() {
                     selectedValue = proxyMode, onValueSelected = {proxyMode = it})
                 TextDialogSettingEntry(
                     title = "Хост",
-                    text = "Введите http хост",
+                    text = "Введите хост",
                     currentText = proxyHost,
                     onTextSave = { proxyHost = it })
                 TextDialogSettingEntry(
