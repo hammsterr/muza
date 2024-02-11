@@ -4,6 +4,7 @@ import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
+import com.yandex.mobile.ads.common.MobileAds
 import it.hamy.muza.enums.CoilDiskCacheMaxSize
 import it.hamy.muza.utils.coilDiskCacheMaxSizeKey
 import it.hamy.muza.utils.getEnum
@@ -13,6 +14,11 @@ class MainApplication : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
         DatabaseInitializer()
+        MobileAds.initialize(this) {
+            /**
+             * Инициализация либы яндекса
+             */
+        }
     }
 
     override fun newImageLoader(): ImageLoader {

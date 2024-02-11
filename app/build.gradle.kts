@@ -91,6 +91,10 @@ dependencies {
 
     implementation(libs.room)
     implementation("androidx.media3:media3-datasource-okhttp:1.0.0-alpha03")
+
+    implementation ("com.yandex.android:mobileads:6.4.0")
+    implementation("com.google.android.gms:play-services-ads-identifier:18.0.1")
+
     kapt(libs.room.compiler)
 
     implementation(projects.innertube)
