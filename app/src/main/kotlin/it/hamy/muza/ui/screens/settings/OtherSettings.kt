@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import it.hamy.muza.Database
 import it.hamy.muza.LocalPlayerAwareWindowInsets
+import it.hamy.muza.preferences.DataPreferences
 import it.hamy.muza.query
 import it.hamy.muza.service.PlayerMediaBrowserService
 import it.hamy.muza.ui.components.themed.Header
@@ -47,6 +48,7 @@ import it.hamy.muza.utils.proxyPortKey
 import it.hamy.muza.utils.rememberPreference
 import it.hamy.muza.utils.toast
 import kotlinx.coroutines.flow.distinctUntilChanged
+import okhttp3.internal.toImmutableList
 import java.net.Proxy
 
 
@@ -115,6 +117,17 @@ fun OtherSettings() {
             )
     ) {
         Header(title = "Другое")
+
+        SettingsEntryGroupText(title = "ОБЗОР")
+
+        ValueSelectorSettingsEntry(
+            title = "Режим отображения",
+            selectedValue = DataPreferences.quickPicksSource,
+            values = enumValues<DataPreferences.QuickPicksSource>().toList().toImmutableList(),
+            onValueSelected = { DataPreferences.quickPicksSource = it }
+        )
+
+        SettingsGroupSpacer()
 
         SettingsEntryGroupText(title = "АНДРОИД АВТО")
 
@@ -196,18 +209,18 @@ fun OtherSettings() {
         )
 
 
-        SettingsEntryGroupText(title = "PROXY")
+        SettingsEntryGroupText(title = "ПРОКСИ")
 
         SwitchSettingEntry(
-            title = "Proxy",
-            text = "Включить proxy",
+            title = "Прокси",
+            text = "Включить прокси",
             isChecked = isProxyEnabled,
             onCheckedChange = { isProxyEnabled = it }
         )
 
         AnimatedVisibility(visible = isProxyEnabled) {
             Column {
-                EnumValueSelectorSettingsEntry(title = "Proxy",
+                EnumValueSelectorSettingsEntry(title = "Прокси",
                     selectedValue = proxyMode, onValueSelected = {proxyMode = it})
                 TextDialogSettingEntry(
                     title = "Хост",
@@ -221,6 +234,5 @@ fun OtherSettings() {
                     onTextSave = { proxyPort = it.toIntOrNull() ?: 1080 })
             }
         }
-
     }
 }

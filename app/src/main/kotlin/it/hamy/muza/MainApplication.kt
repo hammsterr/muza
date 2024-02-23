@@ -14,6 +14,7 @@ class MainApplication : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
         DatabaseInitializer()
+        Dependencies.init(this)
         MobileAds.initialize(this) {
             /**
              * Инициализация либы яндекса

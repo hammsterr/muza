@@ -76,6 +76,7 @@ import it.hamy.muza.utils.isLandscape
 import it.hamy.muza.utils.secondary
 import it.hamy.muza.utils.semiBold
 import kotlinx.coroutines.flow.distinctUntilChanged
+import it.hamy.muza.preferences.DataPreferences
 
 @ExperimentalFoundationApi
 @ExperimentalAnimationApi
@@ -102,6 +103,32 @@ fun QuickPicks(
                     Innertube.relatedPage(NextBody(videoId = (song?.id ?: "J7p4bzqLvCw")))
             }
             trending = song
+        }
+    }
+
+
+    LaunchedEffect(DataPreferences.quickPicksSource) {
+        suspend fun handleSong(song: Song?) {
+            if (relatedPageResult == null || trending?.id != song?.id) relatedPageResult =
+                Innertube.relatedPage(
+                    NextBody(
+                        videoId = (song?.id ?: "J7p4bzqLvCw")
+                    )
+                )
+            trending = song
+        }
+        when (DataPreferences.quickPicksSource) {
+            DataPreferences.QuickPicksSource.Trending ->
+                Database
+                    .trending()
+                    .distinctUntilChanged()
+                    .collect { handleSong(it) }
+
+            DataPreferences.QuickPicksSource.LastInteraction ->
+                Database
+                    .events()
+                    .distinctUntilChanged()
+                    .collect { handleSong(it.firstOrNull()?.song) }
         }
     }
 

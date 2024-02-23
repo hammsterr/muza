@@ -55,6 +55,7 @@ import it.hamy.muza.models.SongPlaylistMap
 import it.hamy.muza.models.SortedSongPlaylistMap
 import kotlin.jvm.Throws
 import kotlinx.coroutines.flow.Flow
+import it.hamy.muza.models.EventWithSong
 
 @Dao
 interface Database {
@@ -315,6 +316,11 @@ interface Database {
     @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId GROUP BY songId ORDER BY SUM(CAST(playTime AS REAL) / (((:now - timestamp) / 86400000) + 1)) DESC LIMIT 1")
     @RewriteQueriesToDropUnusedColumns
     fun trending(now: Long = System.currentTimeMillis()): Flow<Song?>
+
+    @Transaction
+    @Query("SELECT * FROM Event ORDER BY timestamp DESC")
+    fun events(): Flow<List<EventWithSong>>
+
 
     @Query("SELECT COUNT (*) FROM Event")
     fun eventsCount(): Flow<Int>
