@@ -85,7 +85,7 @@ fun Controls(
 
     var artistsInfo: List<Info>? by remember { mutableStateOf(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(Unit, mediaId) {
         withContext(Dispatchers.IO) {
             if (artistsInfo == null) artistsInfo = Database.songArtistInfo(mediaId)
 

@@ -14,7 +14,7 @@ import com.yandex.mobile.ads.common.AdTheme
 import com.yandex.mobile.ads.common.ImpressionData
 
 @Composable
-fun YandexAdsBanner(id: String) {
+fun YandexAdsBannerQuickPicksCenter(id: String) {
     AndroidView(modifier = Modifier.fillMaxSize(), factory = { context ->
         BannerAdView(context).apply {
             /**
@@ -24,7 +24,7 @@ fun YandexAdsBanner(id: String) {
             /**
              * Размер блока рекламы
              */
-            setAdSize(BannerAdSize.inlineSize(context, 110, 110))
+            setAdSize(BannerAdSize.inlineSize(context, 260, 60))
             /**
              * Билдер запроса
              */
@@ -46,6 +46,7 @@ fun YandexAdsBanner(id: String) {
                 }
             }
 
+
             /**
              * Слушатель экшнов
              */
@@ -59,6 +60,7 @@ fun YandexAdsBanner(id: String) {
                     /**
                      * Тут дебажим ошибки
                      */
+                    loadAd(adRequest)
                 }
 
                 override fun onAdClicked() {
@@ -78,6 +80,7 @@ fun YandexAdsBanner(id: String) {
                 }
 
             })
+
             /**
              * Запуск баннера
              */

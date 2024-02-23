@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -51,6 +53,7 @@ import it.hamy.muza.models.Song
 import it.hamy.muza.query
 import it.hamy.muza.ui.components.LocalMenuState
 import it.hamy.muza.ui.components.ShimmerHost
+import it.hamy.muza.ui.components.YandexAdsBannerQuickPicksCenter
 import it.hamy.muza.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.hamy.muza.ui.components.themed.Header
 import it.hamy.muza.ui.components.themed.NonQueuedMediaItemMenu
@@ -244,6 +247,16 @@ fun QuickPicks(
                                 .width(itemInHorizontalGridWidth)
                         )
                     }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 0.dp, end = 0.dp, top = 15.dp)
+                        .align(Alignment.CenterHorizontally),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    YandexAdsBannerQuickPicksCenter(id = "R-M-5961316-5")
                 }
 
                 related.albums?.let { albums ->

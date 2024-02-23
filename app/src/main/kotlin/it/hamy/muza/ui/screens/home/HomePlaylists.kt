@@ -23,8 +23,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -174,6 +172,10 @@ fun HomePlaylists(
                     }
                 }
 
+
+
+
+
                 item(key = "favorites") {
                     PlaylistItem(
                         icon = R.drawable.heart,
@@ -213,18 +215,23 @@ fun HomePlaylists(
                             .animateItemPlacement()
                     )
                 }
+
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(start = 14.dp, end = 10.dp, top = 30.dp)
+                            .padding(start = 14.dp, end = 10.dp, top = 20.dp)
                             .align(Alignment.CenterHorizontally),
                         contentAlignment = Alignment.Center,
                     ) {
                         YandexAdsBanner(id = "R-M-5961316-1")
                     }
                 }
+
             }
+
+
+
         }
         FloatingActionsContainerWithScrollToTop(
             lazyGridState = lazyGridState,
