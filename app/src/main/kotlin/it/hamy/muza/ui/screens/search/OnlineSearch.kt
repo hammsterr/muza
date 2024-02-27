@@ -1,6 +1,5 @@
 package it.hamy.muza.ui.screens.search
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -35,8 +34,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -52,6 +51,7 @@ import it.hamy.muza.Database
 import it.hamy.muza.LocalPlayerAwareWindowInsets
 import it.hamy.muza.R
 import it.hamy.muza.models.SearchQuery
+import it.hamy.muza.preferences.DataPreferences
 import it.hamy.muza.query
 import it.hamy.muza.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.hamy.muza.ui.components.themed.Header
@@ -60,43 +60,38 @@ import it.hamy.muza.ui.styling.LocalAppearance
 import it.hamy.muza.utils.align
 import it.hamy.muza.utils.center
 import it.hamy.muza.utils.medium
-import it.hamy.muza.utils.pauseSearchHistoryKey
-import it.hamy.muza.utils.preferences
 import it.hamy.muza.utils.secondary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 
-@ExperimentalAnimationApi
 @Composable
 fun OnlineSearch(
     textFieldValue: TextFieldValue,
     onTextFieldValueChanged: (TextFieldValue) -> Unit,
     onSearch: (String) -> Unit,
     onViewPlaylist: (String) -> Unit,
-    decorationBox: @Composable (@Composable () -> Unit) -> Unit
+    decorationBox: @Composable (@Composable () -> Unit) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
     val (colorPalette, typography) = LocalAppearance.current
 
     var history by persistList<SearchQuery>("search/online/history")
 
     LaunchedEffect(textFieldValue.text) {
-        if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-            Database.queries("%${textFieldValue.text}%")
-                .distinctUntilChanged { old, new -> old.size == new.size }
-                .collect { history = it }
-        }
+        if (!DataPreferences.pauseSearchHistory) Database.queries("%${textFieldValue.text}%")
+            .distinctUntilChanged { old, new -> old.size == new.size }
+            .collect { history = it }
     }
 
     var suggestionsResult by persist<Result<List<String>?>?>("search/online/suggestionsResult")
 
     LaunchedEffect(textFieldValue.text) {
-        if (textFieldValue.text.isNotEmpty()) {
-            delay(200)
-            suggestionsResult =
-                Innertube.searchSuggestions(SearchSuggestionsBody(input = textFieldValue.text))
-        }
+        if (textFieldValue.text.isEmpty()) return@LaunchedEffect
+
+        delay(200)
+        suggestionsResult = Innertube.searchSuggestions(
+            body = SearchSuggestionsBody(input = textFieldValue.text)
+        )
     }
 
     val playlistId = remember(textFieldValue.text) {
@@ -115,19 +110,15 @@ fun OnlineSearch(
     val closeIconPainter = painterResource(R.drawable.close)
     val arrowForwardIconPainter = painterResource(R.drawable.arrow_forward)
 
-    val focusRequester = remember {
-        FocusRequester()
-    }
-
+    val focusRequester = remember { FocusRequester() }
     val lazyListState = rememberLazyListState()
 
-    Box {
+    Box(modifier = modifier) {
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current
                 .only(WindowInsetsSides.Vertical + WindowInsetsSides.End).asPaddingValues(),
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             item(
                 key = "header",
@@ -144,15 +135,13 @@ fun OnlineSearch(
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             keyboardActions = KeyboardActions(
                                 onSearch = {
-                                    if (textFieldValue.text.isNotEmpty()) {
+                                    if (textFieldValue.text.isNotEmpty())
                                         onSearch(textFieldValue.text)
-                                    }
                                 }
                             ),
                             cursorBrush = SolidColor(colorPalette.text),
                             decorationBox = decorationBox,
-                            modifier = Modifier
-                                .focusRequester(focusRequester)
+                            modifier = Modifier.focusRequester(focusRequester)
                         )
                     },
                     actionsContent = {
@@ -160,22 +149,18 @@ fun OnlineSearch(
                             val isAlbum = playlistId.startsWith("OLAK5uy_")
 
                             SecondaryTextButton(
-                                text = "Посмотреть ${if (isAlbum) "альбом" else "плейлист"}",
+                                text = if (isAlbum) stringResource(R.string.view_album)
+                                else stringResource(R.string.view_playlist),
                                 onClick = { onViewPlaylist(textFieldValue.text) }
                             )
                         }
 
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1f)
-                        )
+                        Spacer(modifier = Modifier.weight(1f))
 
-                        if (textFieldValue.text.isNotEmpty()) {
-                            SecondaryTextButton(
-                                text = "Очистить",
-                                onClick = { onTextFieldValueChanged(TextFieldValue()) }
-                            )
-                        }
+                        if (textFieldValue.text.isNotEmpty()) SecondaryTextButton(
+                            text = stringResource(R.string.clear),
+                            onClick = { onTextFieldValueChanged(TextFieldValue()) }
+                        )
                     }
                 )
             }
@@ -299,15 +284,11 @@ fun OnlineSearch(
                 }
             } ?: suggestionsResult?.exceptionOrNull()?.let {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         BasicText(
-                            text = "An error has occurred.",
+                            text = stringResource(R.string.error_message),
                             style = typography.s.secondary.center,
-                            modifier = Modifier
-                                .align(Alignment.Center)
+                            modifier = Modifier.align(Alignment.Center)
                         )
                     }
                 }

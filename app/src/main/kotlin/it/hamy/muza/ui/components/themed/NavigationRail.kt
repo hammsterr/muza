@@ -54,7 +54,8 @@ inline fun NavigationRail(
     val isLandscape = isLandscape
 
     val paddingValues = LocalPlayerAwareWindowInsets.current
-        .only(WindowInsetsSides.Vertical + WindowInsetsSides.Start).asPaddingValues()
+        .only(WindowInsetsSides.Vertical + WindowInsetsSides.Start)
+        .asPaddingValues()
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -66,8 +67,9 @@ inline fun NavigationRail(
             contentAlignment = Alignment.TopCenter,
             modifier = Modifier
                 .size(
-                    width = if (isLandscape) Dimensions.navigationRailWidthLandscape else Dimensions.navigationRailWidth,
-                    height = Dimensions.headerHeight
+                    width = if (isLandscape) Dimensions.navigationRail.widthLandscape
+                    else Dimensions.navigationRail.width,
+                    height = Dimensions.items.headerHeight
                 )
         ) {
             Image(
@@ -76,7 +78,7 @@ inline fun NavigationRail(
                 colorFilter = ColorFilter.tint(colorPalette.textSecondary),
                 modifier = Modifier
                     .offset(
-                        x = if (isLandscape) 0.dp else Dimensions.navigationRailIconOffset,
+                        x = if (isLandscape) 0.dp else Dimensions.navigationRail.iconOffset,
                         y = 48.dp
                     )
                     .clip(CircleShape)
@@ -89,7 +91,7 @@ inline fun NavigationRail(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .width(if (isLandscape) Dimensions.navigationRailWidthLandscape else Dimensions.navigationRailWidth)
+                .width(if (isLandscape) Dimensions.navigationRail.widthLandscape else Dimensions.navigationRail.width)
         ) {
             val transition = updateTransition(targetState = tabIndex, label = null)
 
@@ -114,7 +116,7 @@ inline fun NavigationRail(
                                 translationX = (1f - dothAlpha) * -48.dp.toPx()
                                 rotationZ = if (isLandscape) 0f else -90f
                             }
-                            .size(Dimensions.navigationRailIconOffset * 2)
+                            .size(Dimensions.navigationRail.iconOffset * 2)
                     )
                 }
 

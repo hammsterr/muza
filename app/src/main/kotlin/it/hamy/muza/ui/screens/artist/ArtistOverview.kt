@@ -1,6 +1,5 @@
 package it.hamy.muza.ui.screens.artist
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
@@ -24,7 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import it.hamy.innertube.Innertube
 import it.hamy.innertube.models.NavigationEndpoint
@@ -33,6 +31,7 @@ import it.hamy.muza.LocalPlayerServiceBinder
 import it.hamy.muza.R
 import it.hamy.muza.ui.components.LocalMenuState
 import it.hamy.muza.ui.components.ShimmerHost
+import it.hamy.muza.ui.components.themed.Attribution
 import it.hamy.muza.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.hamy.muza.ui.components.themed.LayoutWithAdaptiveThumbnail
 import it.hamy.muza.ui.components.themed.NonQueuedMediaItemMenu
@@ -44,16 +43,12 @@ import it.hamy.muza.ui.items.SongItem
 import it.hamy.muza.ui.items.SongItemPlaceholder
 import it.hamy.muza.ui.styling.Dimensions
 import it.hamy.muza.ui.styling.LocalAppearance
-import it.hamy.muza.ui.styling.px
-import it.hamy.muza.utils.align
 import it.hamy.muza.utils.asMediaItem
-import it.hamy.muza.utils.color
 import it.hamy.muza.utils.forcePlay
 import it.hamy.muza.utils.secondary
 import it.hamy.muza.utils.semiBold
 
-@ExperimentalFoundationApi
-@ExperimentalAnimationApi
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArtistOverview(
     youtubeArtistPage: Innertube.ArtistPage?,
@@ -63,16 +58,12 @@ fun ArtistOverview(
     onAlbumClick: (String) -> Unit,
     thumbnailContent: @Composable () -> Unit,
     headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val (colorPalette, typography) = LocalAppearance.current
     val binder = LocalPlayerServiceBinder.current
     val menuState = LocalMenuState.current
     val windowInsets = LocalPlayerAwareWindowInsets.current
-
-    val songThumbnailSizeDp = Dimensions.thumbnails.song
-    val songThumbnailSizePx = songThumbnailSizeDp.px
-    val albumThumbnailSizeDp = 108.dp
-    val albumThumbnailSizePx = albumThumbnailSizeDp.px
 
     val endPaddingValues = windowInsets.only(WindowInsetsSides.End).asPaddingValues()
 
@@ -82,7 +73,10 @@ fun ArtistOverview(
 
     val scrollState = rememberScrollState()
 
-    LayoutWithAdaptiveThumbnail(thumbnailContent = thumbnailContent) {
+    LayoutWithAdaptiveThumbnail(
+        thumbnailContent = thumbnailContent,
+        modifier = modifier
+    ) {
         Box {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -96,14 +90,11 @@ fun ArtistOverview(
                             .asPaddingValues()
                     )
             ) {
-                Box(
-                    modifier = Modifier
-                        .padding(endPaddingValues)
-                ) {
+                Box(modifier = Modifier.padding(endPaddingValues)) {
                     headerContent {
                         youtubeArtistPage?.shuffleEndpoint?.let { endpoint ->
                             SecondaryTextButton(
-                                text = "Перемешать",
+                                text = stringResource(R.string.shuffle),
                                 onClick = {
                                     binder?.stopRadio()
                                     binder?.playRadio(endpoint)
@@ -115,7 +106,7 @@ fun ArtistOverview(
 
                 thumbnailContent()
 
-                if (youtubeArtistPage != null) {
+                youtubeArtistPage?.let {
                     youtubeArtistPage.songs?.let { songs ->
                         Row(
                             verticalAlignment = Alignment.Bottom,
@@ -125,17 +116,16 @@ fun ArtistOverview(
                                 .padding(endPaddingValues)
                         ) {
                             BasicText(
-                                text = "Песни",
+                                text = stringResource(R.string.songs),
                                 style = typography.m.semiBold,
                                 modifier = sectionTextModifier
                             )
 
                             youtubeArtistPage.songsEndpoint?.let {
                                 BasicText(
-                                    text = "Все",
+                                    text = stringResource(R.string.view_all),
                                     style = typography.xs.secondary,
-                                    modifier = sectionTextModifier
-                                        .clickable(onClick = onViewAllSongsClick),
+                                    modifier = sectionTextModifier.clickable(onClick = onViewAllSongsClick)
                                 )
                             }
                         }
@@ -143,15 +133,14 @@ fun ArtistOverview(
                         songs.forEach { song ->
                             SongItem(
                                 song = song,
-                                thumbnailSizeDp = songThumbnailSizeDp,
-                                thumbnailSizePx = songThumbnailSizePx,
+                                thumbnailSize = Dimensions.thumbnails.song,
                                 modifier = Modifier
                                     .combinedClickable(
                                         onLongClick = {
                                             menuState.display {
                                                 NonQueuedMediaItemMenu(
                                                     onDismiss = menuState::hide,
-                                                    mediaItem = song.asMediaItem,
+                                                    mediaItem = song.asMediaItem
                                                 )
                                             }
                                         },
@@ -178,25 +167,23 @@ fun ArtistOverview(
                                 .padding(endPaddingValues)
                         ) {
                             BasicText(
-                                text = "Альбомы",
+                                text = stringResource(R.string.albums),
                                 style = typography.m.semiBold,
                                 modifier = sectionTextModifier
                             )
 
                             youtubeArtistPage.albumsEndpoint?.let {
                                 BasicText(
-                                    text = "Все",
+                                    text = stringResource(R.string.view_all),
                                     style = typography.xs.secondary,
-                                    modifier = sectionTextModifier
-                                        .clickable(onClick = onViewAllAlbumsClick),
+                                    modifier = sectionTextModifier.clickable(onClick = onViewAllAlbumsClick)
                                 )
                             }
                         }
 
                         LazyRow(
                             contentPadding = endPaddingValues,
-                            modifier = Modifier
-                                .fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             items(
                                 items = albums,
@@ -204,11 +191,11 @@ fun ArtistOverview(
                             ) { album ->
                                 AlbumItem(
                                     album = album,
-                                    thumbnailSizePx = albumThumbnailSizePx,
-                                    thumbnailSizeDp = albumThumbnailSizeDp,
+                                    thumbnailSize = Dimensions.thumbnails.album,
                                     alternative = true,
-                                    modifier = Modifier
-                                        .clickable(onClick = { onAlbumClick(album.key) })
+                                    modifier = Modifier.clickable(onClick = {
+                                        onAlbumClick(album.key)
+                                    })
                                 )
                             }
                         }
@@ -223,25 +210,23 @@ fun ArtistOverview(
                                 .padding(endPaddingValues)
                         ) {
                             BasicText(
-                                text = "Синглы",
+                                text = stringResource(R.string.singles),
                                 style = typography.m.semiBold,
                                 modifier = sectionTextModifier
                             )
 
                             youtubeArtistPage.singlesEndpoint?.let {
                                 BasicText(
-                                    text = "Все",
+                                    text = stringResource(R.string.view_all),
                                     style = typography.xs.secondary,
-                                    modifier = sectionTextModifier
-                                        .clickable(onClick = onViewAllSinglesClick),
+                                    modifier = sectionTextModifier.clickable(onClick = onViewAllSinglesClick)
                                 )
                             }
                         }
 
                         LazyRow(
                             contentPadding = endPaddingValues,
-                            modifier = Modifier
-                                .fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             items(
                                 items = singles,
@@ -249,85 +234,38 @@ fun ArtistOverview(
                             ) { album ->
                                 AlbumItem(
                                     album = album,
-                                    thumbnailSizePx = albumThumbnailSizePx,
-                                    thumbnailSizeDp = albumThumbnailSizeDp,
+                                    thumbnailSize = Dimensions.thumbnails.album,
                                     alternative = true,
-                                    modifier = Modifier
-                                        .clickable(onClick = { onAlbumClick(album.key) })
+                                    modifier = Modifier.clickable(onClick = { onAlbumClick(album.key) })
                                 )
                             }
                         }
                     }
 
                     youtubeArtistPage.description?.let { description ->
-                        val attributionsIndex = description.lastIndexOf("\n\nFrom Wikipedia")
-
-                        Row(
+                        Attribution(
+                            text = description,
                             modifier = Modifier
                                 .padding(top = 16.dp)
                                 .padding(vertical = 16.dp, horizontal = 8.dp)
-                                .padding(endPaddingValues)
-                        ) {
-                            BasicText(
-                                text = "“",
-                                style = typography.xxl.semiBold,
-                                modifier = Modifier
-                                    .offset(y = (-8).dp)
-                                    .align(Alignment.Top)
-                            )
-
-                            BasicText(
-                                text = if (attributionsIndex == -1) {
-                                    description
-                                } else {
-                                    description.substring(0, attributionsIndex)
-                                },
-                                style = typography.xxs.secondary,
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .weight(1f)
-                            )
-
-                            BasicText(
-                                text = "„",
-                                style = typography.xxl.semiBold,
-                                modifier = Modifier
-                                    .offset(y = 4.dp)
-                                    .align(Alignment.Bottom)
-                            )
-                        }
-
-                        if (attributionsIndex != -1) {
-                            BasicText(
-                                text = "From Wikipedia under Creative Commons Attribution CC-BY-SA 3.0",
-                                style = typography.xxs.color(colorPalette.textDisabled).align(TextAlign.End),
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .padding(bottom = 16.dp)
-                                    .padding(endPaddingValues)
-                            )
-                        }
+                        )
                     }
-                } else {
-                    ShimmerHost {
+                } ?: ShimmerHost {
+                    TextPlaceholder(modifier = sectionTextModifier)
+
+                    repeat(5) {
+                        SongItemPlaceholder(thumbnailSize = Dimensions.thumbnails.song)
+                    }
+
+                    repeat(2) {
                         TextPlaceholder(modifier = sectionTextModifier)
 
-                        repeat(5) {
-                            SongItemPlaceholder(
-                                thumbnailSizeDp = songThumbnailSizeDp,
-                            )
-                        }
-
-                        repeat(2) {
-                            TextPlaceholder(modifier = sectionTextModifier)
-
-                            Row {
-                                repeat(2) {
-                                    AlbumItemPlaceholder(
-                                        thumbnailSizeDp = albumThumbnailSizeDp,
-                                        alternative = true
-                                    )
-                                }
+                        Row {
+                            repeat(2) {
+                                AlbumItemPlaceholder(
+                                    thumbnailSize = Dimensions.thumbnails.album,
+                                    alternative = true
+                                )
                             }
                         }
                     }

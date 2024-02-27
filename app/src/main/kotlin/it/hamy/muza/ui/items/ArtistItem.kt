@@ -15,84 +15,76 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import it.hamy.innertube.Innertube
 import it.hamy.muza.models.Artist
 import it.hamy.muza.ui.components.themed.TextPlaceholder
 import it.hamy.muza.ui.styling.LocalAppearance
 import it.hamy.muza.ui.styling.shimmer
+import it.hamy.muza.utils.px
 import it.hamy.muza.utils.secondary
 import it.hamy.muza.utils.semiBold
 import it.hamy.muza.utils.thumbnail
-import it.hamy.innertube.Innertube
 
 @Composable
 fun ArtistItem(
     artist: Artist,
-    thumbnailSizePx: Int,
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
-    alternative: Boolean = false,
-) {
-    ArtistItem(
-        thumbnailUrl = artist.thumbnailUrl,
-        name = artist.name,
-        subscribersCount = null,
-        thumbnailSizePx = thumbnailSizePx,
-        thumbnailSizeDp = thumbnailSizeDp,
-        modifier = modifier,
-        alternative = alternative
-    )
-}
+    alternative: Boolean = false
+) = ArtistItem(
+    thumbnailUrl = artist.thumbnailUrl,
+    name = artist.name,
+    subscribersCount = null,
+    thumbnailSize = thumbnailSize,
+    modifier = modifier,
+    alternative = alternative
+)
 
 @Composable
 fun ArtistItem(
     artist: Innertube.ArtistItem,
-    thumbnailSizePx: Int,
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
-    alternative: Boolean = false,
-) {
-    ArtistItem(
-        thumbnailUrl = artist.thumbnail?.url,
-        name = artist.info?.name,
-        subscribersCount = artist.subscribersCountText,
-        thumbnailSizePx = thumbnailSizePx,
-        thumbnailSizeDp = thumbnailSizeDp,
-        modifier = modifier,
-        alternative = alternative
-    )
-}
+    alternative: Boolean = false
+) = ArtistItem(
+    thumbnailUrl = artist.thumbnail?.url,
+    name = artist.info?.name,
+    subscribersCount = artist.subscribersCountText,
+    thumbnailSize = thumbnailSize,
+    modifier = modifier,
+    alternative = alternative
+)
 
 @Composable
 fun ArtistItem(
     thumbnailUrl: String?,
     name: String?,
     subscribersCount: String?,
-    thumbnailSizePx: Int,
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
-    alternative: Boolean = false,
+    alternative: Boolean = false
 ) {
     val (_, typography) = LocalAppearance.current
 
     ItemContainer(
         alternative = alternative,
-        thumbnailSizeDp = thumbnailSizeDp,
+        thumbnailSize = thumbnailSize,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
         AsyncImage(
-            model = thumbnailUrl?.thumbnail(thumbnailSizePx),
+            model = thumbnailUrl?.thumbnail(thumbnailSize.px),
             contentDescription = null,
             modifier = Modifier
                 .clip(CircleShape)
-                .requiredSize(thumbnailSizeDp)
+                .requiredSize(thumbnailSize)
         )
 
         ItemInfoContainer(
-            horizontalAlignment = if (alternative) Alignment.CenterHorizontally else Alignment.Start,
+            horizontalAlignment = if (alternative) Alignment.CenterHorizontally else Alignment.Start
         ) {
             BasicText(
-                text = name ?: "",
+                text = name.orEmpty(),
                 style = typography.xs.semiBold,
                 maxLines = if (alternative) 1 else 2,
                 overflow = TextOverflow.Ellipsis
@@ -104,8 +96,7 @@ fun ArtistItem(
                     style = typography.xxs.semiBold.secondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
         }
@@ -114,32 +105,29 @@ fun ArtistItem(
 
 @Composable
 fun ArtistItemPlaceholder(
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
-    alternative: Boolean = false,
+    alternative: Boolean = false
 ) {
     val (colorPalette) = LocalAppearance.current
 
     ItemContainer(
         alternative = alternative,
-        thumbnailSizeDp = thumbnailSizeDp,
+        thumbnailSize = thumbnailSize,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
         Spacer(
             modifier = Modifier
                 .background(color = colorPalette.shimmer, shape = CircleShape)
-                .size(thumbnailSizeDp)
+                .size(thumbnailSize)
         )
 
         ItemInfoContainer(
-            horizontalAlignment = if (alternative) Alignment.CenterHorizontally else Alignment.Start,
+            horizontalAlignment = if (alternative) Alignment.CenterHorizontally else Alignment.Start
         ) {
             TextPlaceholder()
-            TextPlaceholder(
-                modifier = Modifier
-                    .padding(top = 4.dp)
-            )
+            TextPlaceholder(modifier = Modifier.padding(top = 4.dp))
         }
     }
 }

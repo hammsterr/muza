@@ -1,6 +1,5 @@
 package it.hamy.muza.ui.screens.album
 
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -21,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import it.hamy.compose.persist.persistList
 import it.hamy.muza.Database
@@ -47,13 +47,17 @@ import it.hamy.muza.utils.forcePlayFromBeginning
 import it.hamy.muza.utils.isLandscape
 import it.hamy.muza.utils.semiBold
 
-@ExperimentalAnimationApi
-@ExperimentalFoundationApi
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AlbumSongs(
     browseId: String,
-    headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit,
+    headerContent: @Composable (
+        beforeContent: (@Composable () -> Unit)?,
+        afterContent: (@Composable () -> Unit)?
+    ) -> Unit,
     thumbnailContent: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    afterHeaderContent: (@Composable () -> Unit)? = null
 ) {
     val (colorPalette, typography) = LocalAppearance.current
     val binder = LocalPlayerServiceBinder.current
@@ -65,16 +69,18 @@ fun AlbumSongs(
         Database.albumSongs(browseId).collect { songs = it }
     }
 
-    val thumbnailSizeDp = Dimensions.thumbnails.song
-
     val lazyListState = rememberLazyListState()
 
-    LayoutWithAdaptiveThumbnail(thumbnailContent = thumbnailContent) {
+    LayoutWithAdaptiveThumbnail(
+        thumbnailContent = thumbnailContent,
+        modifier = modifier
+    ) {
         Box {
             LazyColumn(
                 state = lazyListState,
                 contentPadding = LocalPlayerAwareWindowInsets.current
-                .only(WindowInsetsSides.Vertical + WindowInsetsSides.End).asPaddingValues(),
+                    .only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
+                    .asPaddingValues(),
                 modifier = Modifier
                     .background(colorPalette.background0)
                     .fillMaxSize()
@@ -84,19 +90,21 @@ fun AlbumSongs(
                     contentType = 0
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        headerContent {
-                            SecondaryTextButton(
-                                text = "В очередь",
-                                enabled = songs.isNotEmpty(),
-                                onClick = {
-                                    binder?.player?.enqueue(songs.map(Song::asMediaItem))
-                                }
-                            )
-                        }
+                        headerContent(
+                            {
+                                SecondaryTextButton(
+                                    text = stringResource(R.string.enqueue),
+                                    enabled = songs.isNotEmpty(),
+                                    onClick = {
+                                        binder?.player?.enqueue(songs.map(Song::asMediaItem))
+                                    }
+                                )
+                            },
+                            null
+                        )
 
-                        if (!isLandscape) {
-                            thumbnailContent()
-                        }
+                        if (!isLandscape) thumbnailContent()
+                        afterHeaderContent?.invoke()
                     }
                 }
 
@@ -108,7 +116,7 @@ fun AlbumSongs(
                         title = song.title,
                         authors = song.artistsText,
                         duration = song.durationText,
-                        thumbnailSizeDp = thumbnailSizeDp,
+                        thumbnailSize = Dimensions.thumbnails.song,
                         thumbnailContent = {
                             BasicText(
                                 text = "${index + 1}",
@@ -116,40 +124,34 @@ fun AlbumSongs(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
-                                    .width(thumbnailSizeDp)
+                                    .width(Dimensions.thumbnails.song)
                                     .align(Alignment.Center)
                             )
                         },
-                        modifier = Modifier
-                            .combinedClickable(
-                                onLongClick = {
-                                    menuState.display {
-                                        NonQueuedMediaItemMenu(
-                                            onDismiss = menuState::hide,
-                                            mediaItem = song.asMediaItem,
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    binder?.stopRadio()
-                                    binder?.player?.forcePlayAtIndex(
-                                        songs.map(Song::asMediaItem),
-                                        index
+                        modifier = Modifier.combinedClickable(
+                            onLongClick = {
+                                menuState.display {
+                                    NonQueuedMediaItemMenu(
+                                        onDismiss = menuState::hide,
+                                        mediaItem = song.asMediaItem
                                     )
                                 }
-                            )
+                            },
+                            onClick = {
+                                binder?.stopRadio()
+                                binder?.player?.forcePlayAtIndex(
+                                    items = songs.map(Song::asMediaItem),
+                                    index = index
+                                )
+                            }
+                        )
                     )
                 }
 
-                if (songs.isEmpty()) {
-                    item(key = "loading") {
-                        ShimmerHost(
-                            modifier = Modifier
-                                .fillParentMaxSize()
-                        ) {
-                            repeat(4) {
-                                SongItemPlaceholder(thumbnailSizeDp = Dimensions.thumbnails.song)
-                            }
+                if (songs.isEmpty()) item(key = "loading") {
+                    ShimmerHost(modifier = Modifier.fillParentMaxSize()) {
+                        repeat(4) {
+                            SongItemPlaceholder(thumbnailSize = Dimensions.thumbnails.song)
                         }
                     }
                 }

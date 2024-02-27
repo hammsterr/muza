@@ -17,51 +17,40 @@ import it.hamy.muza.ui.styling.Dimensions
 @Composable
 inline fun ItemContainer(
     alternative: Boolean,
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     content: @Composable (centeredModifier: Modifier) -> Unit
-) {
-    if (alternative) {
-        Column(
-            horizontalAlignment = horizontalAlignment,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = modifier
-                .padding(vertical = Dimensions.itemsVerticalPadding, horizontal = 16.dp)
-                .width(thumbnailSizeDp)
-        ) {
-            content(
-                centeredModifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-            )
-        }
-    } else {
-        Row(
-            verticalAlignment = verticalAlignment,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = modifier
-                .padding(vertical = Dimensions.itemsVerticalPadding, horizontal = 16.dp)
-                .fillMaxWidth()
-        ) {
-            content(
-                centeredModifier = Modifier
-                    .align(Alignment.CenterVertically)
-            )
-        }
-    }
-}
+) = if (alternative) Column(
+    horizontalAlignment = horizontalAlignment,
+    verticalArrangement = Arrangement.spacedBy(12.dp),
+    modifier = modifier
+        .padding(
+            vertical = Dimensions.items.verticalPadding,
+            horizontal = Dimensions.items.horizontalPadding
+        )
+        .width(thumbnailSize)
+) { content(Modifier.align(Alignment.CenterHorizontally)) }
+else Row(
+    verticalAlignment = verticalAlignment,
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+    modifier = modifier
+        .padding(
+            vertical = Dimensions.items.verticalPadding,
+            horizontal = Dimensions.items.horizontalPadding
+        )
+        .fillMaxWidth()
+) { content(Modifier.align(Alignment.CenterVertically)) }
 
 @Composable
 inline fun ItemInfoContainer(
     modifier: Modifier = Modifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        horizontalAlignment = horizontalAlignment,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier,
-        content = content
-    )
-}
+) = Column(
+    horizontalAlignment = horizontalAlignment,
+    verticalArrangement = Arrangement.spacedBy(4.dp),
+    modifier = modifier,
+    content = content
+)

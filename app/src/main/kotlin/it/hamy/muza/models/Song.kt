@@ -1,6 +1,7 @@
 package it.hamy.muza.models
 
 import androidx.compose.runtime.Immutable
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -13,24 +14,10 @@ data class Song(
     val durationText: String?,
     val thumbnailUrl: String?,
     val likedAt: Long? = null,
-    val totalPlayTimeMs: Long = 0
+    val totalPlayTimeMs: Long = 0,
+    val loudnessBoost: Float? = null,
+    @ColumnInfo(defaultValue = "false")
+    val blacklisted: Boolean = false
 ) {
-    val formattedTotalPlayTime: String
-        get() {
-            val seconds = totalPlayTimeMs / 1000
-
-            val hours = seconds / 3600
-
-            return when {
-                hours == 0L -> "${seconds / 60}m"
-                hours < 24L -> "${hours}h"
-                else -> "${hours / 24}d"
-            }
-        }
-
-    fun toggleLike(): Song {
-        return copy(
-            likedAt = if (likedAt == null) System.currentTimeMillis() else null
-        )
-    }
+    fun toggleLike() = copy(likedAt = if (likedAt == null) System.currentTimeMillis() else null)
 }

@@ -23,7 +23,7 @@ data class YouTubeRadio(
             val continuation = nextContinuation
 
             if (continuation == null) {
-               Innertube.nextPage(
+                Innertube.nextPage(
                     NextBody(
                         videoId = videoId,
                         playlistId = playlistId,
@@ -43,7 +43,6 @@ data class YouTubeRadio(
                 mediaItems = songsPage.items?.map(Innertube.SongItem::asMediaItem)
                 songsPage.continuation?.takeUnless { nextContinuation == it }
             }
-
         }
 
         return mediaItems ?: emptyList()

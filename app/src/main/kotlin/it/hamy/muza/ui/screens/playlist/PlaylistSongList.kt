@@ -1,7 +1,6 @@
 package it.hamy.muza.ui.screens.playlist
 
 import android.content.Intent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -24,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.valentinilk.shimmer.shimmer
 import it.hamy.compose.persist.persist
 import it.hamy.innertube.Innertube
@@ -45,6 +45,7 @@ import it.hamy.muza.ui.components.themed.HeaderIconButton
 import it.hamy.muza.ui.components.themed.HeaderPlaceholder
 import it.hamy.muza.ui.components.themed.LayoutWithAdaptiveThumbnail
 import it.hamy.muza.ui.components.themed.NonQueuedMediaItemMenu
+import it.hamy.muza.ui.components.themed.PlaylistInfo
 import it.hamy.muza.ui.components.themed.SecondaryTextButton
 import it.hamy.muza.ui.components.themed.TextFieldDialog
 import it.hamy.muza.ui.components.themed.adaptiveThumbnailContent
@@ -52,21 +53,24 @@ import it.hamy.muza.ui.items.SongItem
 import it.hamy.muza.ui.items.SongItemPlaceholder
 import it.hamy.muza.ui.styling.Dimensions
 import it.hamy.muza.ui.styling.LocalAppearance
-import it.hamy.muza.ui.styling.px
+import it.hamy.muza.utils.PlaylistDownloadIcon
 import it.hamy.muza.utils.asMediaItem
 import it.hamy.muza.utils.completed
 import it.hamy.muza.utils.enqueue
 import it.hamy.muza.utils.forcePlayAtIndex
 import it.hamy.muza.utils.forcePlayFromBeginning
 import it.hamy.muza.utils.isLandscape
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-@ExperimentalFoundationApi
-@ExperimentalAnimationApi
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlaylistSongList(
     browseId: String,
+    params: String?,
+    maxDepth: Int?,
+    modifier: Modifier = Modifier
 ) {
     val (colorPalette) = LocalAppearance.current
     val binder = LocalPlayerServiceBinder.current
@@ -79,77 +83,74 @@ fun PlaylistSongList(
         if (playlistPage != null && playlistPage?.songsPage?.continuation == null) return@LaunchedEffect
 
         playlistPage = withContext(Dispatchers.IO) {
-            Innertube.playlistPage(BrowseBody(browseId = browseId))?.completed()?.getOrNull()
+            Innertube.playlistPage(BrowseBody(browseId = browseId, params = params))
+                ?.completed(maxDepth = maxDepth ?: Int.MAX_VALUE)?.getOrNull()
         }
     }
 
-    val songThumbnailSizeDp = Dimensions.thumbnails.song
-    val songThumbnailSizePx = songThumbnailSizeDp.px
+    var isImportingPlaylist by rememberSaveable { mutableStateOf(false) }
 
-    var isImportingPlaylist by rememberSaveable {
-        mutableStateOf(false)
-    }
+    if (isImportingPlaylist) TextFieldDialog(
+        hintText = stringResource(R.string.enter_playlist_name_prompt),
+        initialTextInput = playlistPage?.title.orEmpty(),
+        onDismiss = { isImportingPlaylist = false },
+        onDone = { text ->
+            query {
+                transaction {
+                    val playlistId = Database.insert(Playlist(name = text, browseId = browseId))
 
-    if (isImportingPlaylist) {
-        TextFieldDialog(
-            hintText = "Введите название плейлиста",
-            initialTextInput = playlistPage?.title ?: "",
-            onDismiss = { isImportingPlaylist = false },
-            onDone = { text ->
-                query {
-                    transaction {
-                        val playlistId = Database.insert(Playlist(name = text, browseId = browseId))
-
-                        playlistPage?.songsPage?.items
-                            ?.map(Innertube.SongItem::asMediaItem)
-                            ?.onEach(Database::insert)
-                            ?.mapIndexed { index, mediaItem ->
-                                SongPlaylistMap(
-                                    songId = mediaItem.mediaId,
-                                    playlistId = playlistId,
-                                    position = index
-                                )
-                            }?.let(Database::insertSongPlaylistMaps)
-                    }
+                    playlistPage?.songsPage?.items
+                        ?.map(Innertube.SongItem::asMediaItem)
+                        ?.onEach(Database::insert)
+                        ?.mapIndexed { index, mediaItem ->
+                            SongPlaylistMap(
+                                songId = mediaItem.mediaId,
+                                playlistId = playlistId,
+                                position = index
+                            )
+                        }?.let(Database::insertSongPlaylistMaps)
                 }
             }
-        )
-    }
+        }
+    )
 
     val headerContent: @Composable () -> Unit = {
-        if (playlistPage == null) {
-            HeaderPlaceholder(
-                modifier = Modifier
-                    .shimmer()
-            )
-        } else {
-            Header(title = playlistPage?.title ?: "Неизвестный") {
-                SecondaryTextButton(
-                    text = "В очередь",
-                    enabled = playlistPage?.songsPage?.items?.isNotEmpty() == true,
-                    onClick = {
-                        playlistPage?.songsPage?.items?.map(Innertube.SongItem::asMediaItem)?.let { mediaItems ->
+        if (playlistPage == null) HeaderPlaceholder(modifier = Modifier.shimmer())
+        else Header(title = playlistPage?.title ?: stringResource(R.string.unknown)) {
+            SecondaryTextButton(
+                text = stringResource(R.string.enqueue),
+                enabled = playlistPage?.songsPage?.items?.isNotEmpty() == true,
+                onClick = {
+                    playlistPage?.songsPage?.items?.map(Innertube.SongItem::asMediaItem)
+                        ?.let { mediaItems ->
                             binder?.player?.enqueue(mediaItems)
                         }
-                    }
-                )
+                }
+            )
 
-                Spacer(
-                    modifier = Modifier
-                        .weight(1f)
-                )
+            Spacer(modifier = Modifier.weight(1f))
 
-                HeaderIconButton(
-                    icon = R.drawable.add,
-                    color = colorPalette.text,
-                    onClick = { isImportingPlaylist = true }
-                )
+            playlistPage?.songsPage?.items?.map(Innertube.SongItem::asMediaItem)
+                ?.let { PlaylistDownloadIcon(songs = it.toImmutableList()) }
 
-                HeaderIconButton(
-                    icon = R.drawable.share_social,
-                    color = colorPalette.text,
-                    onClick = {
-                        (playlistPage?.url ?: "https://music.youtube.com/playlist?list=${browseId.removePrefix("VL")}").let { url ->
+            HeaderIconButton(
+                icon = R.drawable.add,
+                color = colorPalette.text,
+                onClick = { isImportingPlaylist = true }
+            )
+
+            HeaderIconButton(
+                icon = R.drawable.share_social,
+                color = colorPalette.text,
+                onClick = {
+                    (
+                            playlistPage?.url
+                                ?: "https://music.youtube.com/playlist?list=${
+                                    browseId.removePrefix(
+                                        "VL"
+                                    )
+                                }"
+                            ).let { url ->
                             val sendIntent = Intent().apply {
                                 action = Intent.ACTION_SEND
                                 type = "text/plain"
@@ -158,22 +159,28 @@ fun PlaylistSongList(
 
                             context.startActivity(Intent.createChooser(sendIntent, null))
                         }
-                    }
-                )
-            }
+                }
+            )
         }
     }
 
-    val thumbnailContent = adaptiveThumbnailContent(playlistPage == null, playlistPage?.thumbnail?.url)
+    val thumbnailContent = adaptiveThumbnailContent(
+        isLoading = playlistPage == null,
+        url = playlistPage?.thumbnail?.url
+    )
 
     val lazyListState = rememberLazyListState()
 
-    LayoutWithAdaptiveThumbnail(thumbnailContent = thumbnailContent) {
+    LayoutWithAdaptiveThumbnail(
+        thumbnailContent = thumbnailContent,
+        modifier = modifier
+    ) {
         Box {
             LazyColumn(
                 state = lazyListState,
                 contentPadding = LocalPlayerAwareWindowInsets.current
-                .only(WindowInsetsSides.Vertical + WindowInsetsSides.End).asPaddingValues(),
+                    .only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
+                    .asPaddingValues(),
                 modifier = Modifier
                     .background(colorPalette.background0)
                     .fillMaxSize()
@@ -185,43 +192,39 @@ fun PlaylistSongList(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         headerContent()
                         if (!isLandscape) thumbnailContent()
+                        PlaylistInfo(playlist = playlistPage)
                     }
                 }
 
                 itemsIndexed(items = playlistPage?.songsPage?.items ?: emptyList()) { index, song ->
                     SongItem(
                         song = song,
-                        thumbnailSizePx = songThumbnailSizePx,
-                        thumbnailSizeDp = songThumbnailSizeDp,
+                        thumbnailSize = Dimensions.thumbnails.song,
                         modifier = Modifier
                             .combinedClickable(
                                 onLongClick = {
                                     menuState.display {
                                         NonQueuedMediaItemMenu(
                                             onDismiss = menuState::hide,
-                                            mediaItem = song.asMediaItem,
+                                            mediaItem = song.asMediaItem
                                         )
                                     }
                                 },
                                 onClick = {
-                                    playlistPage?.songsPage?.items?.map(Innertube.SongItem::asMediaItem)?.let { mediaItems ->
-                                        binder?.stopRadio()
-                                        binder?.player?.forcePlayAtIndex(mediaItems, index)
-                                    }
+                                    playlistPage?.songsPage?.items?.map(Innertube.SongItem::asMediaItem)
+                                        ?.let { mediaItems ->
+                                            binder?.stopRadio()
+                                            binder?.player?.forcePlayAtIndex(mediaItems, index)
+                                        }
                                 }
                             )
                     )
                 }
 
-                if (playlistPage == null) {
-                    item(key = "loading") {
-                        ShimmerHost(
-                            modifier = Modifier
-                                .fillParentMaxSize()
-                        ) {
-                            repeat(4) {
-                                SongItemPlaceholder(thumbnailSizeDp = songThumbnailSizeDp)
-                            }
+                if (playlistPage == null) item(key = "loading") {
+                    ShimmerHost(modifier = Modifier.fillParentMaxSize()) {
+                        repeat(4) {
+                            SongItemPlaceholder(thumbnailSize = Dimensions.thumbnails.song)
                         }
                     }
                 }

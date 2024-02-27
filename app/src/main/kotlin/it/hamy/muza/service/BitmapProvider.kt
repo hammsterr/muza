@@ -13,8 +13,8 @@ import it.hamy.muza.utils.thumbnail
 
 context(Context)
 class BitmapProvider(
-    private val bitmapSize: Int,
-    private val colorProvider: (isSystemInDarkMode: Boolean) -> Int
+    private val getBitmapSize: () -> Int,
+    private val getColor: (isDark: Boolean) -> Int
 ) {
     var lastUri: Uri? = null
         private set
@@ -47,10 +47,14 @@ class BitmapProvider(
 
         lastIsSystemInDarkMode = isSystemInDarkMode
 
-        defaultBitmap =
-            Bitmap.createBitmap(bitmapSize, bitmapSize, Bitmap.Config.ARGB_8888).applyCanvas {
-                drawColor(colorProvider(isSystemInDarkMode))
-            }
+        val size = getBitmapSize()
+        defaultBitmap = Bitmap.createBitmap(
+            /* width = */ size,
+            /* height = */ size,
+            /* config = */ Bitmap.Config.ARGB_8888
+        ).applyCanvas {
+            drawColor(getColor(isSystemInDarkMode))
+        }
 
         return lastBitmap == null
     }
@@ -63,7 +67,7 @@ class BitmapProvider(
 
         lastEnqueued = applicationContext.imageLoader.enqueue(
             ImageRequest.Builder(applicationContext)
-                .data(uri.thumbnail(bitmapSize))
+                .data(uri.thumbnail(getBitmapSize()))
                 .allowHardware(false)
                 .listener(
                     onError = { _, _ ->

@@ -1,31 +1,31 @@
 package it.hamy.muza.ui.screens.search
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import it.hamy.compose.persist.PersistMapCleanup
 import it.hamy.compose.routing.RouteHandler
 import it.hamy.muza.R
 import it.hamy.muza.ui.components.themed.Scaffold
-import it.hamy.muza.ui.screens.globalRoutes
+import it.hamy.muza.ui.screens.GlobalRoutes
+import it.hamy.muza.ui.screens.Route
 import it.hamy.muza.ui.styling.LocalAppearance
 import it.hamy.muza.utils.secondary
 
-@ExperimentalFoundationApi
-@ExperimentalAnimationApi
+@Route
 @Composable
 fun SearchScreen(
     initialTextInput: String,
@@ -34,9 +34,7 @@ fun SearchScreen(
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
 
-    val (tabIndex, onTabChanged) = rememberSaveable {
-        mutableStateOf(0)
-    }
+    val (tabIndex, onTabChanged) = rememberSaveable { mutableIntStateOf(0) }
 
     val (textFieldValue, onTextFieldValueChanged) = rememberSaveable(
         initialTextInput,
@@ -50,23 +48,22 @@ fun SearchScreen(
         )
     }
 
-    PersistMapCleanup(tagPrefix = "search/")
+    PersistMapCleanup(prefix = "search/")
 
     RouteHandler(listenToGlobalEmitter = true) {
-        globalRoutes()
+        GlobalRoutes()
 
-        host {
+        NavHost {
             val decorationBox: @Composable (@Composable () -> Unit) -> Unit = { innerTextField ->
                 Box {
                     AnimatedVisibility(
                         visible = textFieldValue.text.isEmpty(),
                         enter = fadeIn(tween(300)),
                         exit = fadeOut(tween(300)),
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
+                        modifier = Modifier.align(Alignment.CenterEnd)
                     ) {
                         BasicText(
-                            text = "Найти...",
+                            text = stringResource(R.string.search_placeholder),
                             maxLines = 1,
                             style = LocalAppearance.current.typography.xxl.secondary
                         )
@@ -81,9 +78,9 @@ fun SearchScreen(
                 onTopIconButtonClick = pop,
                 tabIndex = tabIndex,
                 onTabChanged = onTabChanged,
-                tabColumnContent = { Item ->
-                    Item(0, "Онлайн", R.drawable.globe)
-                    Item(1, "Библиотека", R.drawable.library)
+                tabColumnContent = { item ->
+                    item(0, stringResource(R.string.online), R.drawable.globe)
+                    item(1, stringResource(R.string.library), R.drawable.library)
                 }
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(currentTabIndex) {

@@ -1,10 +1,9 @@
 package it.hamy.muza.ui.screens.home
 
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import it.hamy.compose.persist.PersistMapCleanup
 import it.hamy.compose.routing.RouteHandler
 import it.hamy.compose.routing.defaultStacking
@@ -16,15 +15,21 @@ import it.hamy.compose.routing.isUnstacking
 import it.hamy.muza.Database
 import it.hamy.muza.R
 import it.hamy.muza.models.SearchQuery
+import it.hamy.muza.models.toUiMood
+import it.hamy.muza.preferences.DataPreferences
+import it.hamy.muza.preferences.UIStatePreferences
 import it.hamy.muza.query
 import it.hamy.muza.ui.components.themed.Scaffold
+import it.hamy.muza.ui.screens.GlobalRoutes
+import it.hamy.muza.ui.screens.Route
 import it.hamy.muza.ui.screens.albumRoute
 import it.hamy.muza.ui.screens.artistRoute
 import it.hamy.muza.ui.screens.builtInPlaylistRoute
 import it.hamy.muza.ui.screens.builtinplaylist.BuiltInPlaylistScreen
-import it.hamy.muza.ui.screens.globalRoutes
 import it.hamy.muza.ui.screens.localPlaylistRoute
 import it.hamy.muza.ui.screens.localplaylist.LocalPlaylistScreen
+import it.hamy.muza.ui.screens.moodRoute
+import it.hamy.muza.ui.screens.pipedPlaylistRoute
 import it.hamy.muza.ui.screens.playlistRoute
 import it.hamy.muza.ui.screens.search.SearchScreen
 import it.hamy.muza.ui.screens.searchResultRoute
@@ -32,13 +37,9 @@ import it.hamy.muza.ui.screens.searchRoute
 import it.hamy.muza.ui.screens.searchresult.SearchResultScreen
 import it.hamy.muza.ui.screens.settings.SettingsScreen
 import it.hamy.muza.ui.screens.settingsRoute
-import it.hamy.muza.utils.homeScreenTabIndexKey
-import it.hamy.muza.utils.pauseSearchHistoryKey
-import it.hamy.muza.utils.preferences
-import it.hamy.muza.utils.rememberPreference
 
-@ExperimentalFoundationApi
-@ExperimentalAnimationApi
+@OptIn(ExperimentalAnimationApi::class)
+@Route
 @Composable
 fun HomeScreen(onPlaylistUrl: (String) -> Unit) {
     val saveableStateHolder = rememberSaveableStateHolder()
@@ -61,7 +62,7 @@ fun HomeScreen(onPlaylistUrl: (String) -> Unit) {
             }
         }
     ) {
-        globalRoutes()
+        GlobalRoutes()
 
         settingsRoute {
             SettingsScreen()
@@ -82,77 +83,86 @@ fun HomeScreen(onPlaylistUrl: (String) -> Unit) {
         searchResultRoute { query ->
             SearchResultScreen(
                 query = query,
-                onSearchAgain = {
-                    searchRoute(query)
-                }
+                onSearchAgain = { searchRoute(query) }
             )
         }
 
         searchRoute { initialTextInput ->
-            val context = LocalContext.current
-
             SearchScreen(
                 initialTextInput = initialTextInput,
                 onSearch = { query ->
                     pop()
                     searchResultRoute(query)
 
-                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-                        query {
-                            Database.insert(SearchQuery(query = query))
-                        }
+                    if (!DataPreferences.pauseSearchHistory) query {
+                        Database.insert(SearchQuery(query = query))
                     }
                 },
                 onViewPlaylist = onPlaylistUrl
             )
         }
 
-        host {
-            val (tabIndex, onTabChanged) = rememberPreference(
-                homeScreenTabIndexKey,
-                defaultValue = 0
-            )
-
+        NavHost {
             Scaffold(
-                topIconButtonId = R.drawable.equalizer,
+                topIconButtonId = R.drawable.settings,
                 onTopIconButtonClick = { settingsRoute() },
-                tabIndex = tabIndex,
-                onTabChanged = onTabChanged,
-                tabColumnContent = { Item ->
-                    Item(0, "Обзор", R.drawable.sparkles)
-                    Item(1, "Песни", R.drawable.musical_notes)
-                    Item(2, "Плейлисты", R.drawable.playlist)
-                    Item(3, "Исполнители", R.drawable.person)
-                    Item(4, "Альбомы", R.drawable.disc)
+                tabIndex = UIStatePreferences.homeScreenTabIndex,
+                onTabChanged = { UIStatePreferences.homeScreenTabIndex = it },
+                tabColumnContent = { item ->
+                    item(0, stringResource(R.string.quick_picks), R.drawable.sparkles)
+                    item(1, stringResource(R.string.discover), R.drawable.globe)
+                    item(2, stringResource(R.string.songs), R.drawable.musical_notes)
+                    item(3, stringResource(R.string.playlists), R.drawable.playlist)
+                    item(4, stringResource(R.string.artists), R.drawable.person)
+                    item(5, stringResource(R.string.albums), R.drawable.disc)
+                    item(6, stringResource(R.string.local), R.drawable.download)
                 }
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
+                    val onSearchClick = { searchRoute("") }
                     when (currentTabIndex) {
                         0 -> QuickPicks(
                             onAlbumClick = { albumRoute(it) },
                             onArtistClick = { artistRoute(it) },
                             onPlaylistClick = { playlistRoute(it) },
-                            onSearchClick = { searchRoute("") }
+                            onSearchClick = onSearchClick
                         )
 
-                        1 -> HomeSongs(
-                            onSearchClick = { searchRoute("") }
+                        1 -> HomeDiscovery(
+                            onMoodClick = { mood -> moodRoute(mood.toUiMood()) },
+                            onNewReleaseAlbumClick = { albumRoute(it) },
+                            onSearchClick = onSearchClick
                         )
 
-                        2 -> HomePlaylists(
+                        2 -> HomeSongs(
+                            onSearchClick = onSearchClick
+                        )
+
+                        3 -> HomePlaylists(
                             onBuiltInPlaylist = { builtInPlaylistRoute(it) },
                             onPlaylistClick = { localPlaylistRoute(it.id) },
-                            onSearchClick = { searchRoute("") }
+                            onPipedPlaylistClick = { session, playlist ->
+                                pipedPlaylistRoute(
+                                    p0 = session.apiBaseUrl.toString(),
+                                    p1 = session.token,
+                                    p2 = playlist.id.toString()
+                                )
+                            },
+                            onSearchClick = onSearchClick
                         )
 
-                        3 -> HomeArtistList(
+                        4 -> HomeArtistList(
                             onArtistClick = { artistRoute(it.id) },
-                            onSearchClick = { searchRoute("") }
+                            onSearchClick = onSearchClick
                         )
 
-                        4 -> HomeAlbums(
+                        5 -> HomeAlbums(
                             onAlbumClick = { albumRoute(it.id) },
-                            onSearchClick = { searchRoute("") }
+                            onSearchClick = onSearchClick
+                        )
+
+                        6 -> HomeLocalSongs(
+                            onSearchClick = onSearchClick
                         )
                     }
                 }

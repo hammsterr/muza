@@ -1,6 +1,6 @@
 package it.hamy.muza
 
-import it.hamy.muza.preferences.PreferencesHolder
+import it.hamy.compose.preferences.PreferencesHolder
 
 object Dependencies {
     lateinit var application: MainApplication

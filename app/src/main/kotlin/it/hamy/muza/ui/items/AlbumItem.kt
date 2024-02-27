@@ -13,54 +13,47 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import it.hamy.innertube.Innertube
 import it.hamy.muza.models.Album
 import it.hamy.muza.ui.components.themed.TextPlaceholder
 import it.hamy.muza.ui.styling.LocalAppearance
 import it.hamy.muza.ui.styling.shimmer
+import it.hamy.muza.utils.px
 import it.hamy.muza.utils.secondary
 import it.hamy.muza.utils.semiBold
 import it.hamy.muza.utils.thumbnail
-import it.hamy.innertube.Innertube
 
 @Composable
 fun AlbumItem(
     album: Album,
-    thumbnailSizePx: Int,
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
     alternative: Boolean = false
-) {
-    AlbumItem(
-        thumbnailUrl = album.thumbnailUrl,
-        title = album.title,
-        authors = album.authorsText,
-        year = album.year,
-        thumbnailSizePx = thumbnailSizePx,
-        thumbnailSizeDp = thumbnailSizeDp,
-        alternative = alternative,
-        modifier = modifier
-    )
-}
+) = AlbumItem(
+    thumbnailUrl = album.thumbnailUrl,
+    title = album.title,
+    authors = album.authorsText,
+    year = album.year,
+    thumbnailSize = thumbnailSize,
+    alternative = alternative,
+    modifier = modifier
+)
 
 @Composable
 fun AlbumItem(
     album: Innertube.AlbumItem,
-    thumbnailSizePx: Int,
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
     alternative: Boolean = false
-) {
-    AlbumItem(
-        thumbnailUrl = album.thumbnail?.url,
-        title = album.info?.name,
-        authors = album.authors?.joinToString("") { it.name ?: "" },
-        year = album.year,
-        thumbnailSizePx = thumbnailSizePx,
-        thumbnailSizeDp = thumbnailSizeDp,
-        alternative = alternative,
-        modifier = modifier
-    )
-}
+) = AlbumItem(
+    thumbnailUrl = album.thumbnail?.url,
+    title = album.info?.name,
+    authors = album.authors?.joinToString("") { it.name.orEmpty() },
+    year = album.year,
+    thumbnailSize = thumbnailSize,
+    alternative = alternative,
+    modifier = modifier
+)
 
 @Composable
 fun AlbumItem(
@@ -68,88 +61,75 @@ fun AlbumItem(
     title: String?,
     authors: String?,
     year: String?,
-    thumbnailSizePx: Int,
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
     alternative: Boolean = false
+) = ItemContainer(
+    alternative = alternative,
+    thumbnailSize = thumbnailSize,
+    modifier = modifier
 ) {
-    val (_, typography, thumbnailShape) = LocalAppearance.current
+    val typography = LocalAppearance.current.typography
+    val thumbnailShape = LocalAppearance.current.thumbnailShape
 
-    ItemContainer(
-        alternative = alternative,
-        thumbnailSizeDp = thumbnailSizeDp,
-        modifier = modifier
-    ) {
-        AsyncImage(
-            model = thumbnailUrl?.thumbnail(thumbnailSizePx),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .clip(thumbnailShape)
-                .size(thumbnailSizeDp)
+    AsyncImage(
+        model = thumbnailUrl?.thumbnail(thumbnailSize.px),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .clip(thumbnailShape)
+            .size(thumbnailSize)
+    )
+
+    ItemInfoContainer {
+        BasicText(
+            text = title.orEmpty(),
+            style = typography.xs.semiBold,
+            maxLines = if (alternative) 1 else 2,
+            overflow = TextOverflow.Ellipsis
         )
 
-        ItemInfoContainer {
+        if (!alternative) authors?.let {
             BasicText(
-                text = title ?: "",
-                style = typography.xs.semiBold,
-                maxLines = if (alternative) 1 else 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            if (!alternative) {
-                authors?.let {
-                    BasicText(
-                        text = authors,
-                        style = typography.xs.semiBold.secondary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            BasicText(
-                text = year ?: "",
-                style = typography.xxs.semiBold.secondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .padding(top = 4.dp)
+                text = authors,
+                style = typography.xs.semiBold.secondary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
+
+        BasicText(
+            text = year.orEmpty(),
+            style = typography.xxs.semiBold.secondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 
 @Composable
 fun AlbumItemPlaceholder(
-    thumbnailSizeDp: Dp,
+    thumbnailSize: Dp,
     modifier: Modifier = Modifier,
     alternative: Boolean = false
+) = ItemContainer(
+    alternative = alternative,
+    thumbnailSize = thumbnailSize,
+    modifier = modifier
 ) {
-    val (colorPalette, _, thumbnailShape) = LocalAppearance.current
+    val colorPalette = LocalAppearance.current.colorPalette
+    val thumbnailShape = LocalAppearance.current.thumbnailShape
 
-    ItemContainer(
-        alternative = alternative,
-        thumbnailSizeDp = thumbnailSizeDp,
-        modifier = modifier
-    ) {
-        Spacer(
-            modifier = Modifier
-                .background(color = colorPalette.shimmer, shape = thumbnailShape)
-                .size(thumbnailSizeDp)
-        )
+    Spacer(
+        modifier = Modifier
+            .background(color = colorPalette.shimmer, shape = thumbnailShape)
+            .size(thumbnailSize)
+    )
 
-        ItemInfoContainer {
-            TextPlaceholder()
-
-            if (!alternative) {
-                TextPlaceholder()
-            }
-
-            TextPlaceholder(
-                modifier = Modifier
-                    .padding(top = 4.dp)
-            )
-        }
+    ItemInfoContainer {
+        TextPlaceholder()
+        if (!alternative) TextPlaceholder()
+        TextPlaceholder(modifier = Modifier.padding(top = 4.dp))
     }
 }

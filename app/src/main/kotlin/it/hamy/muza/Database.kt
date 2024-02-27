@@ -1,12 +1,13 @@
 package it.hamy.muza
 
 import android.content.ContentValues
-import android.content.Context
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE
 import android.os.Parcel
+import androidx.annotation.OptIn
 import androidx.core.database.getFloatOrNull
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.room.AutoMigration
 import androidx.room.Dao
 import androidx.room.Delete
@@ -31,6 +32,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
+import io.ktor.http.Url
 import it.hamy.muza.enums.AlbumSortBy
 import it.hamy.muza.enums.ArtistSortBy
 import it.hamy.muza.enums.PlaylistSortBy
@@ -38,11 +40,12 @@ import it.hamy.muza.enums.SongSortBy
 import it.hamy.muza.enums.SortOrder
 import it.hamy.muza.models.Album
 import it.hamy.muza.models.Artist
-import it.hamy.muza.models.SongWithContentLength
 import it.hamy.muza.models.Event
+import it.hamy.muza.models.EventWithSong
 import it.hamy.muza.models.Format
 import it.hamy.muza.models.Info
 import it.hamy.muza.models.Lyrics
+import it.hamy.muza.models.PipedSession
 import it.hamy.muza.models.Playlist
 import it.hamy.muza.models.PlaylistPreview
 import it.hamy.muza.models.PlaylistWithSongs
@@ -52,59 +55,104 @@ import it.hamy.muza.models.Song
 import it.hamy.muza.models.SongAlbumMap
 import it.hamy.muza.models.SongArtistMap
 import it.hamy.muza.models.SongPlaylistMap
+import it.hamy.muza.models.SongWithContentLength
 import it.hamy.muza.models.SortedSongPlaylistMap
-import kotlin.jvm.Throws
+import it.hamy.muza.service.LOCAL_KEY_PREFIX
 import kotlinx.coroutines.flow.Flow
-import it.hamy.muza.models.EventWithSong
 
 @Dao
+@Suppress("TooManyFunctions")
 interface Database {
-    companion object : Database by DatabaseInitializer.Instance.database
+    companion object : Database by DatabaseInitializer.instance.database
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY ROWID ASC")
+    @Query("SELECT * FROM Song WHERE id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY ROWID ASC")
     @RewriteQueriesToDropUnusedColumns
     fun songsByRowIdAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY ROWID DESC")
+    @Query("SELECT * FROM Song WHERE id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY ROWID DESC")
     @RewriteQueriesToDropUnusedColumns
     fun songsByRowIdDesc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY title ASC")
+    @Query("SELECT * FROM Song WHERE id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY title ASC")
     @RewriteQueriesToDropUnusedColumns
     fun songsByTitleAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY title DESC")
+    @Query("SELECT * FROM Song WHERE id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY title DESC")
     @RewriteQueriesToDropUnusedColumns
     fun songsByTitleDesc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY totalPlayTimeMs ASC")
+    @Query(
+        """
+        SELECT * FROM Song
+        WHERE id NOT LIKE '$LOCAL_KEY_PREFIX%'
+        ORDER BY totalPlayTimeMs ASC
+        """
+    )
     @RewriteQueriesToDropUnusedColumns
     fun songsByPlayTimeAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY totalPlayTimeMs DESC")
+    @Query(
+        """
+        SELECT * FROM Song
+        WHERE id NOT LIKE '$LOCAL_KEY_PREFIX%'
+        ORDER BY totalPlayTimeMs DESC
+        LIMIT :limit
+        """
+    )
     @RewriteQueriesToDropUnusedColumns
-    fun songsByPlayTimeDesc(): Flow<List<Song>>
+    fun songsByPlayTimeDesc(limit: Int = -1): Flow<List<Song>>
 
-    fun songs(sortBy: SongSortBy, sortOrder: SortOrder): Flow<List<Song>> {
-        return when (sortBy) {
-            SongSortBy.PlayTime -> when (sortOrder) {
-                SortOrder.Ascending -> songsByPlayTimeAsc()
-                SortOrder.Descending -> songsByPlayTimeDesc()
-            }
-            SongSortBy.Title -> when (sortOrder) {
-                SortOrder.Ascending -> songsByTitleAsc()
-                SortOrder.Descending -> songsByTitleDesc()
-            }
-            SongSortBy.DateAdded -> when (sortOrder) {
-                SortOrder.Ascending -> songsByRowIdAsc()
-                SortOrder.Descending -> songsByRowIdDesc()
-            }
+    @Transaction
+    @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%' ORDER BY ROWID ASC")
+    @RewriteQueriesToDropUnusedColumns
+    fun localSongsByRowIdAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%' ORDER BY ROWID DESC")
+    @RewriteQueriesToDropUnusedColumns
+    fun localSongsByRowIdDesc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%' ORDER BY title ASC")
+    @RewriteQueriesToDropUnusedColumns
+    fun localSongsByTitleAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%' ORDER BY title DESC")
+    @RewriteQueriesToDropUnusedColumns
+    fun localSongsByTitleDesc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%' ORDER BY totalPlayTimeMs ASC")
+    @RewriteQueriesToDropUnusedColumns
+    fun localSongsByPlayTimeAsc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%' ORDER BY totalPlayTimeMs DESC")
+    @RewriteQueriesToDropUnusedColumns
+    fun localSongsByPlayTimeDesc(): Flow<List<Song>>
+
+    @Suppress("CyclomaticComplexMethod")
+    fun songs(sortBy: SongSortBy, sortOrder: SortOrder, isLocal: Boolean = false) = when (sortBy) {
+        SongSortBy.PlayTime -> when (sortOrder) {
+            SortOrder.Ascending -> if (isLocal) localSongsByPlayTimeAsc() else songsByPlayTimeAsc()
+            SortOrder.Descending -> if (isLocal) localSongsByPlayTimeDesc() else songsByPlayTimeDesc()
+        }
+
+        SongSortBy.Title -> when (sortOrder) {
+            SortOrder.Ascending -> if (isLocal) localSongsByTitleAsc() else songsByTitleAsc()
+            SortOrder.Descending -> if (isLocal) localSongsByTitleDesc() else songsByTitleDesc()
+        }
+
+        SongSortBy.DateAdded -> when (sortOrder) {
+            SortOrder.Ascending -> if (isLocal) localSongsByRowIdAsc() else songsByRowIdAsc()
+            SortOrder.Descending -> if (isLocal) localSongsByRowIdDesc() else songsByRowIdDesc()
         }
     }
 
@@ -119,7 +167,7 @@ interface Database {
     @Query("DELETE FROM QueuedMediaItem")
     fun clearQueue()
 
-    @Query("SELECT * FROM SearchQuery WHERE query LIKE :query ORDER BY id DESC")
+    @Query("SELECT * FROM SearchQuery WHERE `query` LIKE :query ORDER BY id DESC")
     fun queries(query: String): Flow<List<SearchQuery>>
 
     @Query("SELECT COUNT (*) FROM SearchQuery")
@@ -158,27 +206,31 @@ interface Database {
     @Query("SELECT * FROM Artist WHERE bookmarkedAt IS NOT NULL ORDER BY bookmarkedAt ASC")
     fun artistsByRowIdAsc(): Flow<List<Artist>>
 
-    fun artists(sortBy: ArtistSortBy, sortOrder: SortOrder): Flow<List<Artist>> {
-        return when (sortBy) {
-            ArtistSortBy.Name -> when (sortOrder) {
-                SortOrder.Ascending -> artistsByNameAsc()
-                SortOrder.Descending -> artistsByNameDesc()
-            }
-            ArtistSortBy.DateAdded -> when (sortOrder) {
-                SortOrder.Ascending -> artistsByRowIdAsc()
-                SortOrder.Descending -> artistsByRowIdDesc()
-            }
+    fun artists(sortBy: ArtistSortBy, sortOrder: SortOrder) = when (sortBy) {
+        ArtistSortBy.Name -> when (sortOrder) {
+            SortOrder.Ascending -> artistsByNameAsc()
+            SortOrder.Descending -> artistsByNameDesc()
+        }
+
+        ArtistSortBy.DateAdded -> when (sortOrder) {
+            SortOrder.Ascending -> artistsByRowIdAsc()
+            SortOrder.Descending -> artistsByRowIdDesc()
         }
     }
 
     @Query("SELECT * FROM Album WHERE id = :id")
     fun album(id: String): Flow<Album?>
 
-    @Query("SELECT timestamp FROM Album WHERE id = :id")
-    fun albumTimestamp(id: String): Long?
-
     @Transaction
-    @Query("SELECT * FROM Song JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId WHERE SongAlbumMap.albumId = :albumId AND position IS NOT NULL ORDER BY position")
+    @Query(
+        """
+        SELECT * FROM Song
+        JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId
+        WHERE SongAlbumMap.albumId = :albumId AND
+        position IS NOT NULL
+        ORDER BY position
+        """
+    )
     @RewriteQueriesToDropUnusedColumns
     fun albumSongs(albumId: String): Flow<List<Song>>
 
@@ -200,79 +252,144 @@ interface Database {
     @Query("SELECT * FROM Album WHERE bookmarkedAt IS NOT NULL ORDER BY bookmarkedAt DESC")
     fun albumsByRowIdDesc(): Flow<List<Album>>
 
-    fun albums(sortBy: AlbumSortBy, sortOrder: SortOrder): Flow<List<Album>> {
-        return when (sortBy) {
-            AlbumSortBy.Title -> when (sortOrder) {
-                SortOrder.Ascending -> albumsByTitleAsc()
-                SortOrder.Descending -> albumsByTitleDesc()
-            }
-            AlbumSortBy.Year -> when (sortOrder) {
-                SortOrder.Ascending -> albumsByYearAsc()
-                SortOrder.Descending -> albumsByYearDesc()
-            }
-            AlbumSortBy.DateAdded -> when (sortOrder) {
-                SortOrder.Ascending -> albumsByRowIdAsc()
-                SortOrder.Descending -> albumsByRowIdDesc()
-            }
+    fun albums(sortBy: AlbumSortBy, sortOrder: SortOrder) = when (sortBy) {
+        AlbumSortBy.Title -> when (sortOrder) {
+            SortOrder.Ascending -> albumsByTitleAsc()
+            SortOrder.Descending -> albumsByTitleDesc()
+        }
+
+        AlbumSortBy.Year -> when (sortOrder) {
+            SortOrder.Ascending -> albumsByYearAsc()
+            SortOrder.Descending -> albumsByYearDesc()
+        }
+
+        AlbumSortBy.DateAdded -> when (sortOrder) {
+            SortOrder.Ascending -> albumsByRowIdAsc()
+            SortOrder.Descending -> albumsByRowIdDesc()
         }
     }
 
     @Query("UPDATE Song SET totalPlayTimeMs = totalPlayTimeMs + :addition WHERE id = :id")
     fun incrementTotalPlayTimeMs(id: String, addition: Long)
 
+    @Query("SELECT * FROM PipedSession")
+    fun pipedSessions(): Flow<List<PipedSession>>
+
+    @Query("SELECT * FROM Playlist WHERE id = :id")
+    fun playlist(id: Long): Flow<Playlist?>
+
+    // TODO: apparently this is an edge-case now?
+    @RewriteQueriesToDropUnusedColumns
+    @Transaction
+    @Query(
+        """
+        SELECT * FROM SortedSongPlaylistMap
+        INNER JOIN Song on Song.id = SortedSongPlaylistMap.songId
+        WHERE playlistId = :id
+        ORDER BY SortedSongPlaylistMap.position
+        """
+    )
+    fun playlistSongs(id: Long): Flow<List<Song>?>
+
     @Transaction
     @Query("SELECT * FROM Playlist WHERE id = :id")
     fun playlistWithSongs(id: Long): Flow<PlaylistWithSongs?>
 
     @Transaction
-    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name ASC")
+    @Query(
+        """
+        SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist 
+        ORDER BY name ASC
+        """
+    )
     fun playlistPreviewsByNameAsc(): Flow<List<PlaylistPreview>>
 
     @Transaction
-    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY ROWID ASC")
+    @Query(
+        """
+        SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist
+        ORDER BY ROWID ASC
+        """
+    )
     fun playlistPreviewsByDateAddedAsc(): Flow<List<PlaylistPreview>>
 
     @Transaction
-    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY songCount ASC")
+    @Query(
+        """
+        SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist
+        ORDER BY songCount ASC
+        """
+    )
     fun playlistPreviewsByDateSongCountAsc(): Flow<List<PlaylistPreview>>
 
     @Transaction
-    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name DESC")
+    @Query(
+        """
+        SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist
+        ORDER BY name DESC
+        """
+    )
     fun playlistPreviewsByNameDesc(): Flow<List<PlaylistPreview>>
 
     @Transaction
-    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY ROWID DESC")
+    @Query(
+        """
+        SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist
+        ORDER BY ROWID DESC
+        """
+    )
     fun playlistPreviewsByDateAddedDesc(): Flow<List<PlaylistPreview>>
 
     @Transaction
-    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY songCount DESC")
+    @Query(
+        """
+        SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist
+        ORDER BY songCount DESC
+        """
+    )
     fun playlistPreviewsByDateSongCountDesc(): Flow<List<PlaylistPreview>>
 
     fun playlistPreviews(
         sortBy: PlaylistSortBy,
         sortOrder: SortOrder
-    ): Flow<List<PlaylistPreview>> {
-        return when (sortBy) {
-            PlaylistSortBy.Name -> when (sortOrder) {
-                SortOrder.Ascending -> playlistPreviewsByNameAsc()
-                SortOrder.Descending -> playlistPreviewsByNameDesc()
-            }
-            PlaylistSortBy.SongCount -> when (sortOrder) {
-                SortOrder.Ascending -> playlistPreviewsByDateSongCountAsc()
-                SortOrder.Descending -> playlistPreviewsByDateSongCountDesc()
-            }
-            PlaylistSortBy.DateAdded -> when (sortOrder) {
-                SortOrder.Ascending -> playlistPreviewsByDateAddedAsc()
-                SortOrder.Descending -> playlistPreviewsByDateAddedDesc()
-            }
+    ) = when (sortBy) {
+        PlaylistSortBy.Name -> when (sortOrder) {
+            SortOrder.Ascending -> playlistPreviewsByNameAsc()
+            SortOrder.Descending -> playlistPreviewsByNameDesc()
+        }
+
+        PlaylistSortBy.SongCount -> when (sortOrder) {
+            SortOrder.Ascending -> playlistPreviewsByDateSongCountAsc()
+            SortOrder.Descending -> playlistPreviewsByDateSongCountDesc()
+        }
+
+        PlaylistSortBy.DateAdded -> when (sortOrder) {
+            SortOrder.Ascending -> playlistPreviewsByDateAddedAsc()
+            SortOrder.Descending -> playlistPreviewsByDateAddedDesc()
         }
     }
 
-    @Query("SELECT thumbnailUrl FROM Song JOIN SongPlaylistMap ON id = songId WHERE playlistId = :id ORDER BY position LIMIT 4")
+    @Query(
+        """
+        SELECT thumbnailUrl FROM Song
+        JOIN SongPlaylistMap ON id = songId
+        WHERE playlistId = :id
+        ORDER BY position
+        LIMIT 4
+        """
+    )
     fun playlistThumbnailUrls(id: Long): Flow<List<String?>>
 
     @Transaction
-    @Query("SELECT * FROM Song JOIN SongArtistMap ON Song.id = SongArtistMap.songId WHERE SongArtistMap.artistId = :artistId AND totalPlayTimeMs > 0 ORDER BY Song.ROWID DESC")
+    @Query(
+        """
+        SELECT * FROM Song
+        JOIN SongArtistMap ON Song.id = SongArtistMap.songId
+        WHERE SongArtistMap.artistId = :artistId AND
+        totalPlayTimeMs > 0
+        ORDER BY Song.ROWID DESC
+        """
+    )
     @RewriteQueriesToDropUnusedColumns
     fun artistSongs(artistId: String): Flow<List<Song>>
 
@@ -280,10 +397,41 @@ interface Database {
     fun format(songId: String): Flow<Format?>
 
     @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.ROWID DESC")
+    @Query(
+        """
+        SELECT Song.*, contentLength FROM Song
+        JOIN Format ON id = songId
+        WHERE contentLength IS NOT NULL
+        ORDER BY Song.ROWID DESC
+        """
+    )
     fun songsWithContentLength(): Flow<List<SongWithContentLength>>
 
-    @Query("""
+    @Query("SELECT id FROM Song WHERE blacklisted")
+    suspend fun blacklistedIds(): List<String>
+
+    @Query("SELECT blacklisted FROM Song WHERE id = :songId")
+    fun blacklisted(songId: String): Flow<Boolean>
+
+    @Query("SELECT COUNT (*) FROM Song where blacklisted")
+    fun blacklistLength(): Flow<Int>
+
+    @Transaction
+    @Query("UPDATE Song SET blacklisted = NOT blacklisted WHERE blacklisted")
+    fun resetBlacklist()
+
+    @Transaction
+    @Query("UPDATE Song SET blacklisted = NOT blacklisted WHERE id = :songId")
+    fun toggleBlacklist(songId: String)
+
+    suspend fun filterBlacklistedSongs(songs: List<MediaItem>): List<MediaItem> {
+        val blacklistedIds = blacklistedIds()
+        return songs.filter { it.mediaId !in blacklistedIds }
+    }
+
+    @Transaction
+    @Query(
+        """
         UPDATE SongPlaylistMap SET position = 
           CASE 
             WHEN position < :fromPosition THEN position + 1
@@ -291,7 +439,8 @@ interface Database {
             ELSE :toPosition
           END 
         WHERE playlistId = :playlistId AND position BETWEEN MIN(:fromPosition,:toPosition) and MAX(:fromPosition,:toPosition)
-    """)
+        """
+    )
     fun move(playlistId: Long, fromPosition: Int, toPosition: Int)
 
     @Query("DELETE FROM SongPlaylistMap WHERE playlistId = :id")
@@ -303,6 +452,12 @@ interface Database {
     @Query("SELECT loudnessDb FROM Format WHERE songId = :songId")
     fun loudnessDb(songId: String): Flow<Float?>
 
+    @Query("SELECT Song.loudnessBoost FROM Song WHERE id = :songId")
+    fun loudnessBoost(songId: String): Flow<Float?>
+
+    @Query("UPDATE Song SET loudnessBoost = :loudnessBoost WHERE id = :songId")
+    fun setLoudnessBoost(songId: String, loudnessBoost: Float?)
+
     @Query("SELECT * FROM Song WHERE title LIKE :query OR artistsText LIKE :query")
     fun search(query: String): Flow<List<Song>>
 
@@ -313,14 +468,41 @@ interface Database {
     fun songArtistInfo(songId: String): List<Info>
 
     @Transaction
-    @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId GROUP BY songId ORDER BY SUM(CAST(playTime AS REAL) / (((:now - timestamp) / 86400000) + 1)) DESC LIMIT 1")
+    @Query(
+        """
+        SELECT Song.* FROM Event
+        JOIN Song ON Song.id = songId
+        WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%'
+        GROUP BY songId
+        ORDER BY SUM(playTime)
+        DESC LIMIT :limit
+        """
+    )
     @RewriteQueriesToDropUnusedColumns
-    fun trending(now: Long = System.currentTimeMillis()): Flow<Song?>
+    fun trending(limit: Int = 3): Flow<List<Song>>
+
+    @Transaction
+    @Query(
+        """
+        SELECT Song.* FROM Event
+        JOIN Song ON Song.id = songId
+        WHERE (:now - Event.timestamp) <= :period AND
+        Song.id NOT LIKE '$LOCAL_KEY_PREFIX%'
+        GROUP BY songId
+        ORDER BY SUM(playTime) DESC
+        LIMIT :limit
+        """
+    )
+    @RewriteQueriesToDropUnusedColumns
+    fun trending(
+        limit: Int = 3,
+        now: Long = System.currentTimeMillis(),
+        period: Long
+    ): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT * FROM Event ORDER BY timestamp DESC")
     fun events(): Flow<List<EventWithSong>>
-
 
     @Query("SELECT COUNT (*) FROM Event")
     fun eventsCount(): Flow<Int>
@@ -364,6 +546,9 @@ interface Database {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(artists: List<Artist>, songArtistMaps: List<SongArtistMap>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(pipedSession: PipedSession)
 
     @Transaction
     fun insert(mediaItem: MediaItem, block: (Song) -> Song = { it }) {
@@ -416,10 +601,10 @@ interface Database {
     fun upsert(album: Album, songAlbumMaps: List<SongAlbumMap>)
 
     @Upsert
-    fun upsert(songAlbumMap: SongAlbumMap)
-
-    @Upsert
     fun upsert(artist: Artist)
+
+    @Delete
+    fun delete(song: Song)
 
     @Delete
     fun delete(searchQuery: SearchQuery)
@@ -429,6 +614,9 @@ interface Database {
 
     @Delete
     fun delete(songPlaylistMap: SongPlaylistMap)
+
+    @Delete
+    fun delete(pipedSession: PipedSession)
 
     @RawQuery
     fun raw(supportSQLiteQuery: SupportSQLiteQuery): Int
@@ -452,11 +640,10 @@ interface Database {
         Format::class,
         Event::class,
         Lyrics::class,
+        PipedSession::class
     ],
-    views = [
-        SortedSongPlaylistMap::class
-    ],
-    version = 23,
+    views = [SortedSongPlaylistMap::class],
+    version = 28,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -477,28 +664,42 @@ interface Database {
         AutoMigration(from = 19, to = 20),
         AutoMigration(from = 20, to = 21, spec = DatabaseInitializer.From20To21Migration::class),
         AutoMigration(from = 21, to = 22, spec = DatabaseInitializer.From21To22Migration::class),
-    ],
+        AutoMigration(from = 23, to = 24),
+        AutoMigration(from = 24, to = 25),
+        AutoMigration(from = 25, to = 26),
+        AutoMigration(from = 26, to = 27),
+        AutoMigration(from = 27, to = 28)
+    ]
 )
 @TypeConverters(Converters::class)
 abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val database: Database
 
     companion object {
-        lateinit var Instance: DatabaseInitializer
+        @Volatile
+        lateinit var instance: DatabaseInitializer
 
-        context(Context)
+        private fun buildDatabase() = Room
+            .databaseBuilder(
+                context = Dependencies.application.applicationContext,
+                klass = DatabaseInitializer::class.java,
+                name = "data.db"
+            )
+            .addMigrations(
+                From8To9Migration(),
+                From10To11Migration(),
+                From14To15Migration(),
+                From22To23Migration(),
+                From23To24Migration()
+            )
+            .build()
+
         operator fun invoke() {
-            if (!::Instance.isInitialized) {
-                Instance = Room
-                    .databaseBuilder(this@Context, DatabaseInitializer::class.java, "data.db")
-                    .addMigrations(
-                        From8To9Migration(),
-                        From10To11Migration(),
-                        From14To15Migration(),
-                        From22To23Migration()
-                    )
-                    .build()
-            }
+            if (!::instance.isInitialized) reload()
+        }
+
+        fun reload() = synchronized(this) {
+            instance = buildDatabase()
         }
     }
 
@@ -509,81 +710,118 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     class From7To8Migration : AutoMigrationSpec
 
     class From8To9Migration : Migration(8, 9) {
-        override fun migrate(it: SupportSQLiteDatabase) {
-            it.query(SimpleSQLiteQuery("SELECT DISTINCT browseId, text, Info.id FROM Info JOIN Song ON Info.id = Song.albumId;"))
-                .use { cursor ->
-                    val albumValues = ContentValues(2)
-                    while (cursor.moveToNext()) {
-                        albumValues.put("id", cursor.getString(0))
-                        albumValues.put("title", cursor.getString(1))
-                        it.insert("Album", CONFLICT_IGNORE, albumValues)
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.query(
+                SimpleSQLiteQuery(
+                    query = "SELECT DISTINCT browseId, text, Info.id FROM Info JOIN Song ON Info.id = Song.albumId;"
+                )
+            ).use { cursor ->
+                val albumValues = ContentValues(2)
+                while (cursor.moveToNext()) {
+                    albumValues.put("id", cursor.getString(0))
+                    albumValues.put("title", cursor.getString(1))
+                    db.insert("Album", CONFLICT_IGNORE, albumValues)
 
-                        it.execSQL(
-                            "UPDATE Song SET albumId = '${cursor.getString(0)}' WHERE albumId = ${
-                                cursor.getLong(
-                                    2
-                                )
-                            }"
-                        )
-                    }
+                    db.execSQL(
+                        "UPDATE Song SET albumId = '${cursor.getString(0)}' WHERE albumId = ${
+                            cursor.getLong(
+                                2
+                            )
+                        }"
+                    )
                 }
+            }
 
-            it.query(SimpleSQLiteQuery("SELECT GROUP_CONCAT(text, ''), SongWithAuthors.songId FROM Info JOIN SongWithAuthors ON Info.id = SongWithAuthors.authorInfoId GROUP BY songId;"))
-                .use { cursor ->
-                    val songValues = ContentValues(1)
-                    while (cursor.moveToNext()) {
-                        songValues.put("artistsText", cursor.getString(0))
-                        it.update(
-                            "Song",
-                            CONFLICT_IGNORE,
-                            songValues,
-                            "id = ?",
-                            arrayOf(cursor.getString(1))
-                        )
-                    }
+            db.query(
+                SimpleSQLiteQuery(
+                    query = """
+                        SELECT GROUP_CONCAT(text, ''), SongWithAuthors.songId FROM Info
+                        JOIN SongWithAuthors ON Info.id = SongWithAuthors.authorInfoId
+                        GROUP BY songId;
+                    """.trimIndent()
+                )
+            ).use { cursor ->
+                val songValues = ContentValues(1)
+                while (cursor.moveToNext()) {
+                    songValues.put("artistsText", cursor.getString(0))
+                    db.update(
+                        table = "Song",
+                        conflictAlgorithm = CONFLICT_IGNORE,
+                        values = songValues,
+                        whereClause = "id = ?",
+                        whereArgs = arrayOf(cursor.getString(1))
+                    )
                 }
+            }
 
-            it.query(SimpleSQLiteQuery("SELECT browseId, text, Info.id FROM Info JOIN SongWithAuthors ON Info.id = SongWithAuthors.authorInfoId WHERE browseId NOT NULL;"))
-                .use { cursor ->
-                    val artistValues = ContentValues(2)
-                    while (cursor.moveToNext()) {
-                        artistValues.put("id", cursor.getString(0))
-                        artistValues.put("name", cursor.getString(1))
-                        it.insert("Artist", CONFLICT_IGNORE, artistValues)
+            db.query(
+                SimpleSQLiteQuery(
+                    query = """
+                        SELECT browseId, text, Info.id FROM Info
+                        JOIN SongWithAuthors ON Info.id = SongWithAuthors.authorInfoId
+                        WHERE browseId NOT NULL;
+                    """.trimIndent()
+                )
+            ).use { cursor ->
+                val artistValues = ContentValues(2)
+                while (cursor.moveToNext()) {
+                    artistValues.put("id", cursor.getString(0))
+                    artistValues.put("name", cursor.getString(1))
+                    db.insert("Artist", CONFLICT_IGNORE, artistValues)
 
-                        it.execSQL(
-                            "UPDATE SongWithAuthors SET authorInfoId = '${cursor.getString(0)}' WHERE authorInfoId = ${
-                                cursor.getLong(
-                                    2
-                                )
-                            }"
-                        )
-                    }
+                    db.execSQL(
+                        "UPDATE SongWithAuthors SET authorInfoId = '${cursor.getString(0)}' WHERE authorInfoId = ${
+                            cursor.getLong(2)
+                        }"
+                    )
                 }
+            }
 
-            it.execSQL("INSERT INTO SongArtistMap(songId, artistId) SELECT songId, authorInfoId FROM SongWithAuthors")
+            db.execSQL("INSERT INTO SongArtistMap(songId, artistId) SELECT songId, authorInfoId FROM SongWithAuthors")
 
-            it.execSQL("DROP TABLE Info;")
-            it.execSQL("DROP TABLE SongWithAuthors;")
+            db.execSQL("DROP TABLE Info;")
+            db.execSQL("DROP TABLE SongWithAuthors;")
         }
     }
 
     class From10To11Migration : Migration(10, 11) {
-        override fun migrate(it: SupportSQLiteDatabase) {
-            it.query(SimpleSQLiteQuery("SELECT id, albumId FROM Song;")).use { cursor ->
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.query(SimpleSQLiteQuery("SELECT id, albumId FROM Song;")).use { cursor ->
                 val songAlbumMapValues = ContentValues(2)
                 while (cursor.moveToNext()) {
                     songAlbumMapValues.put("songId", cursor.getString(0))
                     songAlbumMapValues.put("albumId", cursor.getString(1))
-                    it.insert("SongAlbumMap", CONFLICT_IGNORE, songAlbumMapValues)
+                    db.insert("SongAlbumMap", CONFLICT_IGNORE, songAlbumMapValues)
                 }
             }
 
-            it.execSQL("CREATE TABLE IF NOT EXISTS `Song_new` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `artistsText` TEXT, `durationText` TEXT NOT NULL, `thumbnailUrl` TEXT, `lyrics` TEXT, `likedAt` INTEGER, `totalPlayTimeMs` INTEGER NOT NULL, `loudnessDb` REAL, `contentLength` INTEGER, PRIMARY KEY(`id`))")
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `Song_new` (
+                    `id` TEXT NOT NULL,
+                    `title` TEXT NOT NULL,
+                    `artistsText` TEXT,
+                    `durationText` TEXT NOT NULL,
+                    `thumbnailUrl` TEXT, `lyrics` TEXT,
+                    `likedAt` INTEGER,
+                    `totalPlayTimeMs` INTEGER NOT NULL,
+                    `loudnessDb` REAL,
+                    `contentLength` INTEGER,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent()
+            )
 
-            it.execSQL("INSERT INTO Song_new(id, title, artistsText, durationText, thumbnailUrl, lyrics, likedAt, totalPlayTimeMs, loudnessDb, contentLength) SELECT id, title, artistsText, durationText, thumbnailUrl, lyrics, likedAt, totalPlayTimeMs, loudnessDb, contentLength FROM Song;")
-            it.execSQL("DROP TABLE Song;")
-            it.execSQL("ALTER TABLE Song_new RENAME TO Song;")
+            db.execSQL(
+                """
+                    INSERT INTO Song_new(id, title, artistsText, durationText, thumbnailUrl, lyrics,
+                    likedAt, totalPlayTimeMs, loudnessDb, contentLength) SELECT id, title, artistsText,
+                    durationText, thumbnailUrl, lyrics, likedAt, totalPlayTimeMs, loudnessDb, contentLength
+                    FROM Song;
+                """.trimIndent()
+            )
+            db.execSQL("DROP TABLE Song;")
+            db.execSQL("ALTER TABLE Song_new RENAME TO Song;")
         }
     }
 
@@ -592,23 +830,43 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     class From11To12Migration : AutoMigrationSpec
 
     class From14To15Migration : Migration(14, 15) {
-        override fun migrate(it: SupportSQLiteDatabase) {
-            it.query(SimpleSQLiteQuery("SELECT id, loudnessDb, contentLength FROM Song;"))
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.query(SimpleSQLiteQuery("SELECT id, loudnessDb, contentLength FROM Song;"))
                 .use { cursor ->
                     val formatValues = ContentValues(3)
                     while (cursor.moveToNext()) {
                         formatValues.put("songId", cursor.getString(0))
                         formatValues.put("loudnessDb", cursor.getFloatOrNull(1))
                         formatValues.put("contentLength", cursor.getFloatOrNull(2))
-                        it.insert("Format", CONFLICT_IGNORE, formatValues)
+                        db.insert("Format", CONFLICT_IGNORE, formatValues)
                     }
                 }
 
-            it.execSQL("CREATE TABLE IF NOT EXISTS `Song_new` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `artistsText` TEXT, `durationText` TEXT NOT NULL, `thumbnailUrl` TEXT, `lyrics` TEXT, `likedAt` INTEGER, `totalPlayTimeMs` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+            db.execSQL(
+                """
+                    CREATE TABLE IF NOT EXISTS `Song_new` (
+                        `id` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `artistsText` TEXT,
+                        `durationText` TEXT NOT NULL,
+                        `thumbnailUrl` TEXT,
+                        `lyrics` TEXT,
+                        `likedAt` INTEGER,
+                        `totalPlayTimeMs` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent()
+            )
 
-            it.execSQL("INSERT INTO Song_new(id, title, artistsText, durationText, thumbnailUrl, lyrics, likedAt, totalPlayTimeMs) SELECT id, title, artistsText, durationText, thumbnailUrl, lyrics, likedAt, totalPlayTimeMs FROM Song;")
-            it.execSQL("DROP TABLE Song;")
-            it.execSQL("ALTER TABLE Song_new RENAME TO Song;")
+            db.execSQL(
+                """
+                    INSERT INTO Song_new(id, title, artistsText, durationText, thumbnailUrl, lyrics, likedAt, totalPlayTimeMs)
+                    SELECT id, title, artistsText, durationText, thumbnailUrl, lyrics, likedAt, totalPlayTimeMs
+                    FROM Song;
+                """.trimIndent()
+            )
+            db.execSQL("DROP TABLE Song;")
+            db.execSQL("ALTER TABLE Song_new RENAME TO Song;")
         }
     }
 
@@ -616,7 +874,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
         DeleteColumn("Artist", "shuffleVideoId"),
         DeleteColumn("Artist", "shufflePlaylistId"),
         DeleteColumn("Artist", "radioVideoId"),
-        DeleteColumn("Artist", "radioPlaylistId"),
+        DeleteColumn("Artist", "radioPlaylistId")
     )
     class From20To21Migration : AutoMigrationSpec
 
@@ -624,63 +882,103 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     class From21To22Migration : AutoMigrationSpec
 
     class From22To23Migration : Migration(22, 23) {
-        override fun migrate(it: SupportSQLiteDatabase) {
-            it.execSQL("CREATE TABLE IF NOT EXISTS Lyrics (`songId` TEXT NOT NULL, `fixed` TEXT, `synced` TEXT, PRIMARY KEY(`songId`), FOREIGN KEY(`songId`) REFERENCES `Song`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                    CREATE TABLE IF NOT EXISTS Lyrics (
+                        `songId` TEXT NOT NULL,
+                        `fixed` TEXT,
+                        `synced` TEXT,
+                        PRIMARY KEY(`songId`),
+                        FOREIGN KEY(`songId`) REFERENCES `Song`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent()
+            )
 
-            it.query(SimpleSQLiteQuery("SELECT id, lyrics, synchronizedLyrics FROM Song;")).use { cursor ->
-                val lyricsValues = ContentValues(3)
-                while (cursor.moveToNext()) {
-                    lyricsValues.put("songId", cursor.getString(0))
-                    lyricsValues.put("fixed", cursor.getString(1))
-                    lyricsValues.put("synced", cursor.getString(2))
-                    it.insert("Lyrics", CONFLICT_IGNORE, lyricsValues)
+            db.query(SimpleSQLiteQuery("SELECT id, lyrics, synchronizedLyrics FROM Song;"))
+                .use { cursor ->
+                    val lyricsValues = ContentValues(3)
+                    while (cursor.moveToNext()) {
+                        lyricsValues.put("songId", cursor.getString(0))
+                        lyricsValues.put("fixed", cursor.getString(1))
+                        lyricsValues.put("synced", cursor.getString(2))
+                        db.insert("Lyrics", CONFLICT_IGNORE, lyricsValues)
+                    }
                 }
-            }
 
-            it.execSQL("CREATE TABLE IF NOT EXISTS Song_new (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `artistsText` TEXT, `durationText` TEXT, `thumbnailUrl` TEXT, `likedAt` INTEGER, `totalPlayTimeMs` INTEGER NOT NULL, PRIMARY KEY(`id`))")
-            it.execSQL("INSERT INTO Song_new(id, title, artistsText, durationText, thumbnailUrl, likedAt, totalPlayTimeMs) SELECT id, title, artistsText, durationText, thumbnailUrl, likedAt, totalPlayTimeMs FROM Song;")
-            it.execSQL("DROP TABLE Song;")
-            it.execSQL("ALTER TABLE Song_new RENAME TO Song;")
+            db.execSQL(
+                """
+                    CREATE TABLE IF NOT EXISTS Song_new (
+                        `id` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `artistsText` TEXT,
+                        `durationText` TEXT,
+                        `thumbnailUrl` TEXT,
+                        `likedAt` INTEGER,
+                        `totalPlayTimeMs` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                    INSERT INTO Song_new(id, title, artistsText, durationText, thumbnailUrl, likedAt, totalPlayTimeMs)
+                    SELECT id, title, artistsText, durationText, thumbnailUrl, likedAt, totalPlayTimeMs
+                    FROM Song;
+                """.trimIndent()
+            )
+            db.execSQL("DROP TABLE Song;")
+            db.execSQL("ALTER TABLE Song_new RENAME TO Song;")
         }
+    }
+
+    class From23To24Migration : Migration(23, 24) {
+        override fun migrate(db: SupportSQLiteDatabase) =
+            db.execSQL("ALTER TABLE Song ADD COLUMN loudnessBoost REAL")
     }
 }
 
 @TypeConverters
 object Converters {
     @TypeConverter
-    fun mediaItemFromByteArray(value: ByteArray?): MediaItem? {
-        return value?.let { byteArray ->
-            runCatching {
-                val parcel = Parcel.obtain()
-                parcel.unmarshall(byteArray, 0, byteArray.size)
-                parcel.setDataPosition(0)
-                val bundle = parcel.readBundle(MediaItem::class.java.classLoader)
-                parcel.recycle()
+    @OptIn(UnstableApi::class)
+    fun mediaItemFromByteArray(value: ByteArray?): MediaItem? = value?.let { byteArray ->
+        runCatching {
+            val parcel = Parcel.obtain()
+            parcel.unmarshall(byteArray, 0, byteArray.size)
+            parcel.setDataPosition(0)
+            val bundle = parcel.readBundle(MediaItem::class.java.classLoader)
+            parcel.recycle()
 
-                bundle?.let(MediaItem.CREATOR::fromBundle)
-            }.getOrNull()
-        }
+            bundle?.let(MediaItem.CREATOR::fromBundle)
+        }.getOrNull()
     }
 
     @TypeConverter
-    fun mediaItemToByteArray(mediaItem: MediaItem?): ByteArray? {
-        return mediaItem?.toBundle()?.let { persistableBundle ->
-            val parcel = Parcel.obtain()
-            parcel.writeBundle(persistableBundle)
-            val bytes = parcel.marshall()
-            parcel.recycle()
+    @OptIn(UnstableApi::class)
+    fun mediaItemToByteArray(mediaItem: MediaItem?): ByteArray? = mediaItem?.toBundle()?.let {
+        val parcel = Parcel.obtain()
+        parcel.writeBundle(it)
+        val bytes = parcel.marshall()
+        parcel.recycle()
 
-            bytes
-        }
+        bytes
     }
+
+    @TypeConverter
+    fun urlToString(url: Url) = url.toString()
+
+    @TypeConverter
+    fun stringToUrl(string: String) = Url(string)
 }
 
+@Suppress("UnusedReceiverParameter")
 val Database.internal: RoomDatabase
-    get() = DatabaseInitializer.Instance
+    get() = DatabaseInitializer.instance
 
-fun query(block: () -> Unit) = DatabaseInitializer.Instance.queryExecutor.execute(block)
+fun query(block: () -> Unit) = DatabaseInitializer.instance.queryExecutor.execute(block)
 
-fun transaction(block: () -> Unit) = with(DatabaseInitializer.Instance) {
+fun transaction(block: () -> Unit) = with(DatabaseInitializer.instance) {
     transactionExecutor.execute {
         runInTransaction(block)
     }

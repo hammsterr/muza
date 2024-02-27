@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ## ⚠️ Make sure you are able to reproduce the bug with the [latest version](https://github.com/vfsfitvnm/vimusic/releases/latest).
+        ## ⚠️ Make sure you are able to reproduce the bug with the [latest version](https://github.com/hamy/muza/releases/latest).
         ## ⚠️ Make sure there is no issue about this bug already.
 
   - type: textarea
@@ -61,7 +61,7 @@ body:
   - type: input
     id: muza-version
     attributes:
-      label: ViMusic version
+      label: muza version
       placeholder: |
         Example: "0.5.4"
     validations:

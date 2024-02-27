@@ -1,6 +1,7 @@
 package it.hamy.muza.ui.screens.player
 
 import android.text.format.Formatter
+import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,7 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.CacheSpan
 import it.hamy.innertube.Innertube
@@ -32,19 +36,21 @@ import it.hamy.innertube.models.bodies.PlayerBody
 import it.hamy.innertube.requests.player
 import it.hamy.muza.Database
 import it.hamy.muza.LocalPlayerServiceBinder
+import it.hamy.muza.R
 import it.hamy.muza.models.Format
 import it.hamy.muza.ui.styling.LocalAppearance
 import it.hamy.muza.ui.styling.onOverlay
 import it.hamy.muza.ui.styling.overlay
 import it.hamy.muza.utils.color
 import it.hamy.muza.utils.medium
-import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
+@OptIn(UnstableApi::class)
 @Composable
 fun StatsForNerds(
     mediaId: String,
@@ -59,43 +65,40 @@ fun StatsForNerds(
     AnimatedVisibility(
         visible = isDisplayed,
         enter = fadeIn(),
-        exit = fadeOut(),
+        exit = fadeOut()
     ) {
         var cachedBytes by remember(mediaId) {
-            mutableStateOf(binder.cache.getCachedBytes(mediaId, 0, -1))
+            mutableLongStateOf(binder.cache.getCachedBytes(mediaId, 0, -1))
         }
 
-        var format by remember {
-            mutableStateOf<Format?>(null)
-        }
+        var format by remember { mutableStateOf<Format?>(null) }
 
         LaunchedEffect(mediaId) {
             Database.format(mediaId).distinctUntilChanged().collectLatest { currentFormat ->
-                if (currentFormat?.itag == null) {
-                    binder.player.currentMediaItem?.takeIf { it.mediaId == mediaId }?.let { mediaItem ->
+                if (currentFormat?.itag == null) binder.player.currentMediaItem
+                    ?.takeIf { it.mediaId == mediaId }
+                    ?.let { mediaItem ->
                         withContext(Dispatchers.IO) {
                             delay(2000)
-                            Innertube.player(PlayerBody(videoId = mediaId))?.onSuccess { response ->
-                                response.streamingData?.highestQualityFormat?.let { format ->
-                                    Database.insert(mediaItem)
-                                    Database.insert(
-                                        Format(
-                                            songId = mediaId,
-                                            itag = format.itag,
-                                            mimeType = format.mimeType,
-                                            bitrate = format.bitrate,
-                                            loudnessDb = response.playerConfig?.audioConfig?.normalizedLoudnessDb,
-                                            contentLength = format.contentLength,
-                                            lastModified = format.lastModified
+                            Innertube.player(PlayerBody(videoId = mediaId))
+                                ?.onSuccess { response ->
+                                    response.streamingData?.highestQualityFormat?.let { format ->
+                                        Database.insert(mediaItem)
+                                        Database.insert(
+                                            Format(
+                                                songId = mediaId,
+                                                itag = format.itag,
+                                                mimeType = format.mimeType,
+                                                bitrate = format.bitrate,
+                                                loudnessDb = response.playerConfig?.audioConfig?.normalizedLoudnessDb,
+                                                contentLength = format.contentLength,
+                                                lastModified = format.lastModified
+                                            )
                                         )
-                                    )
+                                    }
                                 }
-                            }
                         }
-                    }
-                } else {
-                    format = currentFormat
-                }
+                    } else format = currentFormat
             }
         }
 
@@ -123,11 +126,7 @@ fun StatsForNerds(
         Box(
             modifier = modifier
                 .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = {
-                            onDismiss()
-                        }
-                    )
+                    detectTapGestures(onTap = { onDismiss() })
                 }
                 .background(colorPalette.overlay)
                 .fillMaxSize()
@@ -138,70 +137,54 @@ fun StatsForNerds(
                     .align(Alignment.Center)
                     .padding(all = 16.dp)
             ) {
+                @Composable
+                fun Text(text: String) = BasicText(
+                    text = text,
+                    maxLines = 1,
+                    style = typography.xs.medium.color(colorPalette.onOverlay)
+                )
+
                 Column(horizontalAlignment = Alignment.End) {
-                    BasicText(
-                        text = "Id",
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
-                    )
-                    BasicText(
-                        text = "Itag",
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
-                    )
-                    BasicText(
-                        text = "Bitrate",
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
-                    )
-                    BasicText(
-                        text = "Size",
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
-                    )
-                    BasicText(
-                        text = "Cached",
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
-                    )
-                    BasicText(
-                        text = "Loudness",
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
-                    )
+                    Text(text = stringResource(R.string.id))
+                    Text(text = stringResource(R.string.itag))
+                    Text(text = stringResource(R.string.bitrate))
+                    Text(text = stringResource(R.string.size))
+                    Text(text = stringResource(R.string.cached))
+                    Text(text = stringResource(R.string.loudness))
                 }
 
                 Column {
-                    BasicText(
-                        text = mediaId,
-                        maxLines = 1,
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
+                    Text(text = mediaId)
+                    Text(text = format?.itag?.toString() ?: stringResource(R.string.unknown))
+                    Text(
+                        text = format?.bitrate?.let {
+                            stringResource(
+                                R.string.format_kbps,
+                                it / 1000
+                            )
+                        } ?: stringResource(R.string.unknown)
                     )
-                    BasicText(
-                        text = format?.itag?.toString() ?: "Unknown",
-                        maxLines = 1,
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
-                    )
-                    BasicText(
-                        text = format?.bitrate?.let { "${it / 1000} kbps" } ?: "Unknown",
-                        maxLines = 1,
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
-                    )
-                    BasicText(
+                    Text(
                         text = format?.contentLength
-                            ?.let { Formatter.formatShortFileSize(context, it) } ?: "Unknown",
-                        maxLines = 1,
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
+                            ?.let { Formatter.formatShortFileSize(context, it) }
+                            ?: stringResource(R.string.unknown)
                     )
-                    BasicText(
+                    Text(
                         text = buildString {
                             append(Formatter.formatShortFileSize(context, cachedBytes))
 
                             format?.contentLength?.let {
                                 append(" (${(cachedBytes.toFloat() / it * 100).roundToInt()}%)")
                             }
-                        },
-                        maxLines = 1,
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
+                        }
                     )
-                    BasicText(
-                        text = format?.loudnessDb?.let { "%.2f dB".format(it) } ?: "Unknown",
-                        maxLines = 1,
-                        style = typography.xs.medium.color(colorPalette.onOverlay)
+                    Text(
+                        text = format?.loudnessDb?.let {
+                            stringResource(
+                                R.string.format_db,
+                                "%.2f".format(it)
+                            )
+                        } ?: stringResource(R.string.unknown)
                     )
                 }
             }
